@@ -2,6 +2,22 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+st.set_page_config(
+    page_title="Опрос сотрудников",
+    page_icon="✅",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
 st.title("Work location")
 
 # Загрузка данных сотрудников (можно заменить на чтение из Google Sheets или БД)
