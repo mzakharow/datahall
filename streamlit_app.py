@@ -23,7 +23,7 @@ uemail = query_params.get("email", 'Enter your email')
 #  email = st.text_input("Input email", value=st.session_state.email)
 email = st.text_input("Enter your email", value=uemail)
 
-row = {'task_options': 'DH', 'client_options': 'su'}
+row = {'task_options': 'DH,Super Core,Warehouse', 'client_options': '5,6,A,B'}
 if st.button("Check email"):
     #row = df[df['employee_email'] == email]
     
