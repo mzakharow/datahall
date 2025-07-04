@@ -78,10 +78,10 @@ def user_survey_page():
         loc_options = {loc.name: loc.id for loc in locations}
         act_options = {act.name: act.id for act in activities}
 
-        selected_location = st.selectbox("Выберите локацию", list(loc_options.keys()))
-        selected_activity = st.selectbox("Выберите активность", list(act_options.keys()))
+        selected_location = st.selectbox("select location", list(loc_options.keys()))
+        selected_activity = st.selectbox("select activity", list(act_options.keys()))
 
-        if st.button("Отправить ответ"):
+        if st.button("Go"):
             response = {
                 "email": user["email"],
                 "technician_id": user["id"],
@@ -90,13 +90,13 @@ def user_survey_page():
                 "timestamp": datetime.now()
             }
 
-            with engine.begin() as conn:
-                conn.execute(text("""
-                    INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
-                    VALUES (:technician_id, :location_id, :activity_id, :timestamp)
-                """), response)
+            # with engine.begin() as conn:
+            #     conn.execute(text("""
+            #         INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
+            #         VALUES (:technician_id, :location_id, :activity_id, :timestamp)
+            #     """), response)
 
-            st.success("Ответ сохранён!")
+            st.success("Saves")
             st.json(response)  # del
 
 def settings_page():
