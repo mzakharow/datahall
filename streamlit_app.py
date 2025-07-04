@@ -100,7 +100,7 @@ def user_survey_page():
             st.json(response)  # del
 
 def settings_page():
-    st.title("⚙️ Настройки")
+    st.title("⚙️ Settings")
 
     col1, col2 = st.columns(2)
 
@@ -218,7 +218,7 @@ def settings_page():
     team_lead_names.insert(0, "—")
 
     edited = st.data_editor(
-        tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "Удалить"]],
+        tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "delete"]],
         num_rows="dynamic",
         use_container_width=True,
         key="technicians_editor",
