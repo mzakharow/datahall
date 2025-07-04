@@ -33,7 +33,7 @@ if "user_data" not in st.session_state:
 # ======================= Pages ==========================
 
 def user_survey_page():
-    st.title("📋 Опрос сотрудника")
+    st.title("📋 Survey")
 
     # --- State
     if "email_checked" not in st.session_state:
@@ -48,7 +48,7 @@ def user_survey_page():
     if "email" not in st.session_state:
         st.session_state.email = query_params.get("email", "")
 
-    email = st.text_input("Введите ваш email", value=st.session_state.email)
+    email = st.text_input("Enter email", value=st.session_state.email)
     st.session_state.email = email  
     # email = st.text_input("Введите ваш email", value=email_param)
 
