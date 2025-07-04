@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 import re
 
 st.set_page_config(
-    page_title="Опрос сотрудников",
+    page_title="Survey",
     page_icon="✅",
     layout="wide",
     initial_sidebar_state="expanded"
