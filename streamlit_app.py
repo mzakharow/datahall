@@ -218,7 +218,7 @@ def settings_page():
     team_lead_names.insert(0, "—")
 
     edited = st.data_editor(
-        tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "delete"]],
+        tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "del"]],
         num_rows="dynamic",
         use_container_width=True,
         key="technicians_editor",
@@ -230,7 +230,7 @@ def settings_page():
             ),
             "is_teamlead": st.column_config.CheckboxColumn("is teamlead"),
             "activ": st.column_config.CheckboxColumn("active"),
-            "Удалить": st.column_config.CheckboxColumn("Del")
+            "del": st.column_config.CheckboxColumn("del")
         }
     )
 
