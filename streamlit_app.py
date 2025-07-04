@@ -4,7 +4,6 @@ from datetime import datetime
 from sqlalchemy import create_engine, text
 import re
 
-# Установка параметров страницы и скрытие лишнего
 st.set_page_config(
     page_title="Опрос сотрудников",
     page_icon="✅",
@@ -21,30 +20,28 @@ hide_streamlit_style = """
 """
 # st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Подключение к базе данных
 db = st.secrets["database"]
 engine = create_engine(
     f"postgresql+psycopg2://{db.user}:{db.password}@{db.host}:{db.port}/{db.dbname}"
 )
 
-# Состояние сессии
 if "email_checked" not in st.session_state:
     st.session_state.email_checked = False
 if "user_data" not in st.session_state:
     st.session_state.user_data = None
 
-# ======================= Страницы ==========================
+# ======================= Pages ==========================
 
 def user_survey_page():
     st.title("📋 Опрос сотрудника")
 
-    # --- Состояние
+    # --- State
     if "email_checked" not in st.session_state:
         st.session_state.email_checked = False
     if "user_data" not in st.session_state:
         st.session_state.user_data = None
 
-    # --- Email из query params (если есть)
+    # --- Email from query params
     query_params = st.query_params
     # email_param = query_params.get("email", "")
     
@@ -52,11 +49,11 @@ def user_survey_page():
         st.session_state.email = query_params.get("email", "")
 
     email = st.text_input("Введите ваш email", value=st.session_state.email)
-    st.session_state.email = email  # сохраняем обратно при вводе
+    st.session_state.email = email  
     # email = st.text_input("Введите ваш email", value=email_param)
 
     # --- Проверка email
-    if st.button("Проверить email"):
+    if st.button("Check email"):
         with engine.connect() as conn:
             row = conn.execute(
                 text("SELECT * FROM technicians WHERE LOWER(email) = :email"),
@@ -66,15 +63,14 @@ def user_survey_page():
         if row:
             st.session_state.email_checked = True
             st.session_state.user_data = dict(row._mapping)
-            st.success("Email подтверждён!")
+            st.success("Email success!")
         else:
-            st.error("Email не найден в базе.")
+            st.error("Email doesn't exist")
 
-    # --- Основная форма
+    # --- Main form
     if st.session_state.email_checked:
         user = st.session_state.user_data
 
-        # --- Загрузка списка локаций
         with engine.connect() as conn:
             locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
             activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
@@ -86,7 +82,6 @@ def user_survey_page():
         selected_activity = st.selectbox("Выберите активность", list(act_options.keys()))
 
         if st.button("Отправить ответ"):
-            # Подготовка данных
             response = {
                 "email": user["email"],
                 "technician_id": user["id"],
@@ -95,7 +90,6 @@ def user_survey_page():
                 "timestamp": datetime.now()
             }
 
-            # --- Пример вставки в БД:
             with engine.begin() as conn:
                 conn.execute(text("""
                     INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
@@ -103,17 +97,16 @@ def user_survey_page():
                 """), response)
 
             st.success("Ответ сохранён!")
-            st.json(response)  # можно убрать после отладки
+            st.json(response)  # del
 
 def settings_page():
     st.title("⚙️ Настройки")
 
-    # Создаём две колонки
     col1, col2 = st.columns(2)
 
-    # ====== ЛОКАЦИИ ======
+    # ====== Locations ======
     with col1:
-        st.subheader("📍 Таблица локаций")
+        st.subheader("📍 Locations")
 
         with engine.connect() as conn:
             df_loc = pd.read_sql("SELECT id, name FROM locations ORDER BY id", conn)
@@ -125,7 +118,7 @@ def settings_page():
             key="locations_editor"
         )
 
-        if st.button("💾 Сохранить локации"):
+        if st.button("💾 Save locations"):
             names_seen = set()
             duplicate_found = False
 
@@ -138,7 +131,7 @@ def settings_page():
                     names_seen.add(name)
 
             if duplicate_found:
-                st.error("❌ Названия локаций должны быть уникальны.")
+                st.error("❌ location isn't unique.")
             else:
                 with engine.begin() as conn:
                     for idx, row in edited_df.iterrows():
@@ -156,12 +149,12 @@ def settings_page():
                                 text("INSERT INTO locations (name) VALUES (:name)"),
                                 {"name": name}
                             )
-                st.success("Локации сохранены")
+                st.success("Done")
                 st.rerun()
 
     # ====== АКТИВНОСТИ ======
     with col2:
-        st.subheader("🏷 Таблица активностей")
+        st.subheader("Activities")
 
         with engine.connect() as conn:
             df_act = pd.read_sql("SELECT id, name FROM activities ORDER BY id", conn)
@@ -173,7 +166,7 @@ def settings_page():
             key="activities_editor"
         )
 
-        if st.button("💾 Сохранить активности"):
+        if st.button("💾 Save activities"):
             names_seen = set()
             duplicate_found = False
 
@@ -186,7 +179,7 @@ def settings_page():
                     names_seen.add(name)
 
             if duplicate_found:
-                st.error("❌ Названия активностей должны быть уникальны.")
+                st.error("❌ activitie isn't unique")
             else:
                 with engine.begin() as conn:
                     for idx, row in edited_act.iterrows():
@@ -208,7 +201,7 @@ def settings_page():
                 st.rerun()
 
     # ====== ТЕХНИКИ ======
-    st.subheader("👷 Таблица сотрудников (technicians)")
+    st.subheader("👷 Technicians")
 
     with engine.connect() as conn:
         df_tech = pd.read_sql("SELECT * FROM technicians ORDER BY id", conn)
@@ -217,16 +210,13 @@ def settings_page():
     all_names = {row["id"]: row["name"] for _, row in df_tech.iterrows()}
     team_leads = {row["id"]: row["name"] for _, row in df_tech.iterrows() if row.get("is_teamlead")}
 
-    # Подготовка отображаемого DataFrame
     tech_display = df_tech[["id", "name", "email", "team_lead", "activ", "is_teamlead"]].copy()
-    tech_display["Удалить"] = False
+    tech_display["del"] = False
     tech_display["team_lead_name"] = tech_display["team_lead"].map(team_leads).fillna("—")
 
-    # Выпадающий список с именами тимлидов
     team_lead_names = list(team_leads.values())
     team_lead_names.insert(0, "—")
 
-    # Показываем редактор
     edited = st.data_editor(
         tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "Удалить"]],
         num_rows="dynamic",
@@ -238,13 +228,13 @@ def settings_page():
                 options=team_lead_names,
                 required=False
             ),
-            "is_teamlead": st.column_config.CheckboxColumn("Является тимлидом"),
-            "activ": st.column_config.CheckboxColumn("Активен"),
-            "Удалить": st.column_config.CheckboxColumn("Удалить")
+            "is_teamlead": st.column_config.CheckboxColumn("is teamlead"),
+            "activ": st.column_config.CheckboxColumn("active"),
+            "Удалить": st.column_config.CheckboxColumn("Del")
         }
     )
 
-    if st.button("💾 Сохранить сотрудников"):
+    if st.button("💾 Save technicians"):
         emails_seen = set()
         email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
         error = False
@@ -258,35 +248,32 @@ def settings_page():
                 activ = bool(row["activ"])
                 to_delete = row["Удалить"]
 
-                # Преобразуем имя тимлида в ID
                 team_lead_id = None
                 for tid, tname in team_leads.items():
                     if tname == team_lead_name:
                         team_lead_id = tid
                         break
 
-                # Пропуск пустых строк
                 if not name and not email:
                     continue
 
                 if not name or not email:
-                    st.warning(f"Строка {idx + 1}: имя и email обязательны.")
+                    st.warning(f"Строка {idx + 1}: name and email")
                     error = True
                     continue
 
                 if not re.match(email_regex, email):
-                    st.warning(f"Строка {idx + 1}: неверный email: '{email}'")
+                    st.warning(f"Строка {idx + 1}: wrong email: '{email}'")
                     error = True
                     continue
 
                 if email in emails_seen:
-                    st.warning(f"Строка {idx + 1}: email '{email}' повторяется.")
+                    st.warning(f"Строка {idx + 1}: email '{email}' already exist.")
                     error = True
                     continue
 
                 emails_seen.add(email)
 
-                # Новая строка
                 if idx >= len(df_tech):
                     if not to_delete:
                         conn.execute(text("""
@@ -323,10 +310,10 @@ def settings_page():
 
 # ======================= Навигация ==========================
 
-st.sidebar.title("Навигация")
-page = st.sidebar.radio("Страницы", ["Опрос", "Настройки"])
+st.sidebar.title("Menu")
+page = st.sidebar.radio("Pages", ["Survey", "Settings"])
 
-if page == "Опрос":
+if page == "Survey":
     user_survey_page()
-elif page == "Настройки":
+elif page == "Settings":
     settings_page()
