@@ -116,8 +116,8 @@ if not user:
         login_email = st.text_input("Email", key="login_email")
         login_password = st.text_input("Password", type="password", key="login_password")
         hashed_pw = hash_password(login_password)
-        st.success(hashed_pw)
-        st.success(login_password)
+        #st.success(hashed_pw)
+        #st.success(login_password)
         # st.success(user["password"])
         # hash_password(password)
         if st.button("Login now"):
