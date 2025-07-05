@@ -33,7 +33,7 @@ def register_user(name: str, email: str, password: str) -> bool:
     with engine.begin() as conn:
         conn.execute(
             text("""
-                INSERT INTO technicians (name, email, password, is_teamlead, activ, admin)
+                INSERT INTO technicians (name, email, password, is_teamlead, activ, admin, password)
                 VALUES (:name, :email, :password, false, true, false)
             """),
             {"name": name, "email": email.lower(), "password": hashed_pw}
