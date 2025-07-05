@@ -4,7 +4,7 @@ from pages import survey, settings
 st.set_page_config(page_title="Survey", page_icon="✅", layout="wide")
 
 # UI
-st.sidebar.title("Menu")
+st.sidebar.title("Menu1")
 page = st.sidebar.radio("Pages", ["Survey", "Settings"])
 
 if page == "Survey":
