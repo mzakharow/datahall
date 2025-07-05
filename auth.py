@@ -36,7 +36,7 @@ def register_user(name: str, email: str, password: str) -> bool:
                 INSERT INTO technicians (name, email, password, is_teamlead, activ, admin)
                 VALUES (:name, :email, :password, false, true, false)
             """),
-            {"name": name, "email": email.lower(), "password": hashed_pw}
+            {"name": name, "email": email.lower(), "password": password}
         )
     return True
 
