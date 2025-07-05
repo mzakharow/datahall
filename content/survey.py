@@ -57,11 +57,11 @@ def run():
             }
 
             # Save to DB (optional)
-            with engine.begin() as conn:
-                conn.execute(text("""
-                    INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
-                    VALUES (:technician_id, :location_id, :activity_id, :timestamp)
-                """), response)
+            # with engine.begin() as conn:
+            #     conn.execute(text("""
+            #         INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
+            #         VALUES (:technician_id, :location_id, :activity_id, :timestamp)
+            #     """), response)
 
             st.success("Saved!")
             st.json(response)
