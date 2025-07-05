@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import text
 from datetime import datetime
-from db import engine
+from db import get_engine
 
 def run():
     st.title("👷 Team Lead Panel")
@@ -15,7 +15,7 @@ def run():
     team_lead_id = user["id"]
 
     # Получение подчинённых техников
-    with engine.connect() as conn:
+    with get_engine().connect() as conn:
         technicians = conn.execute(text("""
             SELECT id, name FROM technicians
             WHERE team_lead = :tl_id AND activ = true
@@ -56,7 +56,7 @@ def run():
     )
 
     if st.button("💾 Назначить задачи"):
-        with engine.begin() as conn:
+        with get_engine().begin() as conn:
             for _, row in edited_df.iterrows():
                 tech_name = row["Technician"]
                 tech_id = tech_options.get(tech_name)
