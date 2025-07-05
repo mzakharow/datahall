@@ -1,16 +1,56 @@
+# import streamlit as st
+# from pages import survey, settings
+
+# st.set_page_config(page_title="Survey", page_icon="✅", layout="wide")
+
+# # UI
+# st.sidebar.title("Menu1")
+# page = st.sidebar.radio("Pages", ["Survey", "Settings"])
+
+# if page == "Survey":
+#     survey.run()
+# elif page == "Settings":
+#     settings.run()
+
 import streamlit as st
-from pages import survey, settings
+from auth import get_user_by_email, is_team_lead, is_admin
+from pages import survey, teamlead_view, settings
 
-st.set_page_config(page_title="Survey", page_icon="✅", layout="wide")
+st.set_page_config(page_title="Survey App", layout="wide")
 
-# UI
-st.sidebar.title("Menu1")
-page = st.sidebar.radio("Pages", ["Survey", "Settings"])
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-if page == "Survey":
-    survey.run()
-elif page == "Settings":
-    settings.run()
+if st.session_state.user is None:
+    st.title("🔐 Welcome to the Survey App")
+    email = st.text_input("Enter your email to log in")
+    if st.button("Login"):
+        user = get_user_by_email(email)
+        if user:
+            st.session_state.user = user
+            st.success("Login successful")
+        else:
+            st.error("User not found")
+
+    survey.run()  # Опрос доступен даже без логина
+
+else:
+    user = st.session_state.user
+    st.sidebar.title("📋 Menu")
+    options = ["Survey"]
+    if is_team_lead(user):
+        options.append("Team Lead")
+    if is_admin(user):
+        options.append("Settings")
+
+    choice = st.sidebar.radio("Choose page", options)
+
+    if choice == "Survey":
+        survey.run()
+    elif choice == "Team Lead":
+        teamlead_view.run()
+    elif choice == "Settings":
+        settings.run()
 
 
 # import streamlit as st
