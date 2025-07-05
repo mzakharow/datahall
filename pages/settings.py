@@ -2,12 +2,15 @@ from db import get_engine
 import pandas as pd
 import streamlit as st
 from sqlalchemy import text
+from db import get_engine
 import re
 
 def run():
     st.title("⚙️ Settings")
 
     col1, col2 = st.columns(2)
+
+    engine = get_engine()
 
     # ====== Locations ======
     with col1:
