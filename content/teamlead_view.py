@@ -6,7 +6,7 @@ from db import get_engine
 
 def run():
     st.title("👷 Team Lead Panel")
-
+    engine = get_engine()
     user = st.session_state.get("user")
     if not user or not user.get("is_teamlead"):
         st.error("Access denied")
@@ -15,7 +15,7 @@ def run():
     team_lead_id = user["id"]
 
     # Получение подчинённых техников
-    with get_engine().connect() as conn:
+    with engine.connect() as conn:
         technicians = conn.execute(text("""
             SELECT id, name FROM technicians
             WHERE team_lead = :tl_id AND activ = true
@@ -56,7 +56,7 @@ def run():
     )
 
     if st.button("💾 Назначить задачи"):
-        with get_engine().begin() as conn:
+        with engine.begin() as conn:
             for _, row in edited_df.iterrows():
                 tech_name = row["Technician"]
                 tech_id = tech_options.get(tech_name)
