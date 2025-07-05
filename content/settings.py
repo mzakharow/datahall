@@ -105,7 +105,7 @@ def run():
                                 text("INSERT INTO activities (name) VALUES (:name)"),
                                 {"name": name}
                             )
-                st.success("Активности сохранены")
+                st.success("Done")
                 st.rerun()
 
     # ====== ТЕХНИКИ ======
@@ -155,7 +155,7 @@ def run():
                 is_teamlead = bool(row["is_teamlead"])
                 activ = bool(row["activ"])
                 admin = bool(row["admin"])
-                to_delete = row["Удалить"]
+                to_delete = row["del"]
 
                 team_lead_id = None
                 for tid, tname in team_leads.items():
@@ -167,17 +167,17 @@ def run():
                     continue
 
                 if not name or not email:
-                    st.warning(f"Строка {idx + 1}: name and email")
+                    st.warning(f"Row {idx + 1}: name and email")
                     error = True
                     continue
 
                 if not re.match(email_regex, email):
-                    st.warning(f"Строка {idx + 1}: wrong email: '{email}'")
+                    st.warning(f"Row {idx + 1}: wrong email: '{email}'")
                     error = True
                     continue
 
                 if email in emails_seen:
-                    st.warning(f"Строка {idx + 1}: email '{email}' already exist.")
+                    st.warning(f"Row {idx + 1}: email '{email}' already exist.")
                     error = True
                     continue
 
@@ -216,5 +216,5 @@ def run():
                         })
 
         if not error:
-            st.success("Сотрудники обновлены")
+            st.success("Updated")
             st.rerun()
