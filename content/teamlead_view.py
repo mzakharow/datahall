@@ -1,69 +1,81 @@
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine, text
-
-# Подключение к БД
-from auth import engine
+from sqlalchemy import text
+from datetime import datetime
+from db import engine
 
 def run():
-    st.title("🛠️ Assign Tasks to Technicians")
+    st.title("👷 Team Lead Panel")
 
     user = st.session_state.get("user")
-    if not user:
-        st.warning("You must be logged in to view this page.")
+    if not user or not user.get("is_teamlead"):
+        st.error("Access denied")
         return
 
-    team_lead_id = user.get("id")
+    team_lead_id = user["id"]
 
-    # Получаем техников, которые относятся к текущему тимлиду
+    # Получение подчинённых техников
     with engine.connect() as conn:
-        techs = conn.execute(
-            text("""
-                SELECT id, name FROM technicians
-                WHERE team_lead = :tl_id AND activ = true
-                ORDER BY name
-            """), {"tl_id": team_lead_id}
-        ).fetchall()
+        technicians = conn.execute(text("""
+            SELECT id, name FROM technicians
+            WHERE team_lead = :tl_id AND activ = true
+            ORDER BY name
+        """), {"tl_id": team_lead_id}).fetchall()
 
-        locations = conn.execute(
-            text("SELECT id, name FROM locations ORDER BY name")
-        ).fetchall()
+        locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
+        activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
 
-        activities = conn.execute(
-            text("SELECT id, name FROM activities ORDER BY name")
-        ).fetchall()
-
-    if not techs:
-        st.info("No technicians assigned to you yet.")
+    if not technicians:
+        st.info("У вас пока нет подчинённых.")
         return
 
-    # Создание формы назначения
-    with st.form("assign_form"):
-        selected_tech = st.selectbox("👷 Technician", [f"{t.id} - {t.name}" for t in techs])
-        selected_location = st.selectbox("📍 Location", [l.name for l in locations])
-        selected_activity = st.selectbox("📋 Activity", [a.name for a in activities])
-        submitted = st.form_submit_button("Assign Task")
+    loc_options = {loc.name: loc.id for loc in locations}
+    act_options = {act.name: act.id for act in activities}
+    tech_options = {tech.name: tech.id for tech in technicians}
 
-        if submitted:
-            tech_id = int(selected_tech.split(" - ")[0])
-            location_id = next(l.id for l in locations if l.name == selected_location)
-            activity_id = next(a.id for a in activities if a.name == selected_activity)
+    # Подготовка начального DataFrame
+    df = pd.DataFrame([{
+        "Technician": tech.name,
+        "Location": list(loc_options.keys())[0],
+        "Activity": list(act_options.keys())[0]
+    } for tech in technicians])
 
-            with engine.begin() as conn:
-                conn.execute(
-                    text("""
-                        INSERT INTO technician_assignments (technician_id, team_lead_id, location_id, activity_id)
-                        VALUES (:tech, :tl, :loc, :act)
-                    """),
-                    {
-                        "tech": tech_id,
-                        "tl": team_lead_id,
-                        "loc": location_id,
-                        "act": activity_id
-                    }
-                )
+    edited_df = st.data_editor(
+        df,
+        num_rows="fixed",
+        use_container_width=True,
+        key="assignments_editor",
+        column_config={
+            "Location": st.column_config.SelectboxColumn(
+                "Location", options=list(loc_options.keys())
+            ),
+            "Activity": st.column_config.SelectboxColumn(
+                "Activity", options=list(act_options.keys())
+            ),
+        }
+    )
 
-            st.success("✅ Task assigned successfully")
+    if st.button("💾 Назначить задачи"):
+        with engine.begin() as conn:
+            for _, row in edited_df.iterrows():
+                tech_name = row["Technician"]
+                tech_id = tech_options.get(tech_name)
+                loc_id = loc_options.get(row["Location"])
+                act_id = act_options.get(row["Activity"])
 
+                if tech_id and loc_id and act_id:
+                    conn.execute(text("""
+                        INSERT INTO technician_assignments (technician_id, team_lead_id, location_id, activity_id, created_at)
+                        VALUES (:tech_id, :tl_id, :loc_id, :act_id, :created_at)
+                    """), {
+                        "tech_id": tech_id,
+                        "tl_id": team_lead_id,
+                        "loc_id": loc_id,
+                        "act_id": act_id,
+                        "created_at": datetime.now()
+                    })
+
+        st.success("Назначения сохранены ✅")
+        st.rerun()
     # Таблица уже назначенных задач
     
