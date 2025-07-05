@@ -66,22 +66,4 @@ def run():
             st.success("✅ Task assigned successfully")
 
     # Таблица уже назначенных задач
-    """with engine.connect() as conn:
-        assigned = conn.execute(
-            text("""
-                """SELECT t.name AS technician, l.name AS location, a.name AS activity
-                FROM technician_assignments ta
-                JOIN technicians t ON ta.technician_id = t.id
-                JOIN locations l ON ta.location_id = l.id
-                JOIN activities a ON ta.activity_id = a.id
-                WHERE ta.team_lead_id = :tl_id
-                ORDER BY technician
-            """
-            """),
-            {"tl_id": team_lead_id}
-        ).fetchall()
-
-    if assigned:
-        df = pd.DataFrame(assigned)
-        st.subheader("📑 Current Assignments")
-        st.dataframe(df, use_container_width=True)"""
+    
