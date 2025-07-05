@@ -115,12 +115,12 @@ if not user:
         st.subheader("🔐 Login")
         login_email = st.text_input("Email", key="login_email")
         login_password = st.text_input("Password", type="password", key="login_password")
-        hashed_pw = hash_password(login_password)
+        # hashed_pw = hash_password(login_password)
         st.success(hashed_pw)
         st.success(login_password)
         if st.button("Login now"):
             user = get_user_by_email(login_email)
-            if user and user["password"] == hashed_pw:  # Упрощённая проверка!
+            if user and user["password"] == login_password:  # Упрощённая проверка!
                 st.session_state.user = user
                 st.success("Logged in successfully!")
                 st.rerun()
