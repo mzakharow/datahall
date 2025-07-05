@@ -1,5 +1,5 @@
 import streamlit as st
-from pages import survey, settings
+from content import survey, settings
 
 st.set_page_config(page_title="Survey", page_icon="✅", layout="wide")
 
