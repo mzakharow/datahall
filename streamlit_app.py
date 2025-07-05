@@ -41,7 +41,6 @@
 import streamlit as st
 from content import survey, teamlead_view, settings
 from auth import get_user_by_email, is_team_lead, is_admin
-from content import survey, teamlead_view, settings
 
 st.set_page_config(page_title="Survey App", layout="wide")
 
@@ -49,14 +48,27 @@ st.set_page_config(page_title="Survey App", layout="wide")
 user = st.session_state.get("user", None)
 
 if not user:
-    st.title("📋 Survey")
-    survey.run()  # Показываем только опрос
-    st.info("🔐 Please log in or register using the sidebar")
+    # Показываем только опрос
+    survey.run()
+
+    st.info("🔐 Please log in or register:")
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("🔐 Login"):
+            st.switch_page("pages/1_Login.py")
+    with col2:
+        if st.button("📝 Register"):
+            st.switch_page("pages/2_Register.py")
+
 else:
     st.sidebar.title("📋 Menu")
-    page = st.sidebar.radio("Navigation", ["Survey"] +
-                            (["Team Lead"] if is_team_lead(user) else []) +
-                            (["Settings"] if is_admin(user) else []))
+    page = st.sidebar.radio(
+        "Navigation",
+        ["Survey"]
+        + (["Team Lead"] if is_team_lead(user) else [])
+        + (["Settings"] if is_admin(user) else [])
+    )
 
     if page == "Survey":
         survey.run()
