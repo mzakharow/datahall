@@ -121,7 +121,7 @@ if not user:
         if st.button("Login now"):
             user = get_user_by_email(login_email)
             # if user and user["password"] == login_password:  # Упрощённая проверка!
-            if if user and check_password(user["password"]):
+            if user and check_password(user["password"]):
                 st.session_state.user = user
                 st.success("Logged in successfully!")
                 st.rerun()
