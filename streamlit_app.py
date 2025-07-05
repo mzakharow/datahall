@@ -15,7 +15,7 @@
 
 import streamlit as st
 from auth import get_user_by_email, is_team_lead, is_admin
-from content import survey, teamlead_view, settings, auth
+from content import survey, teamlead_view, settings
 
 st.set_page_config(page_title="Survey App", layout="wide")
 
