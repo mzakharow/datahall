@@ -96,7 +96,6 @@ user = st.session_state.user
 
 # ========== Без авторизации ==========
 if not user:
-    st.title("📋 Survey")
     survey.run()
 
     col1, col2 = st.columns(2)
