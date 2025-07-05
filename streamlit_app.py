@@ -38,37 +38,120 @@
 #     elif choice == "Settings":
 #         settings.run()
 
+# import streamlit as st
+# from content import survey, teamlead_view, settings
+# from auth import get_user_by_email, is_team_lead, is_admin
+
+# st.set_page_config(page_title="Survey App", layout="wide")
+
+# # Проверка сессии
+# user = st.session_state.get("user", None)
+
+# if not user:
+#     # Показываем только опрос
+#     survey.run()
+
+#     col1, col2 = st.columns(2)
+
+#     with col1:
+#         if st.button("🔐 Login"):
+#             st.switch_page("login.py")
+
+#     with col2:
+#         if st.button("📝 Register"):
+#             st.switch_page("content/register.py")
+
+# else:
+#     st.sidebar.title("📋 Menu")
+#     page = st.sidebar.radio(
+#         "Navigation",
+#         ["Survey"]
+#         + (["Team Lead"] if is_team_lead(user) else [])
+#         + (["Settings"] if is_admin(user) else [])
+#     )
+
+#     if page == "Survey":
+#         survey.run()
+#     elif page == "Team Lead":
+#         teamlead_view.run()
+#     elif page == "Settings":
+#         settings.run()
+
+
 import streamlit as st
 from content import survey, teamlead_view, settings
-from auth import get_user_by_email, is_team_lead, is_admin
+from auth import get_user_by_email, register_user, is_team_lead, is_admin
 
 st.set_page_config(page_title="Survey App", layout="wide")
 
-# Проверка сессии
-user = st.session_state.get("user", None)
+# Состояния кнопок
+if "show_login" not in st.session_state:
+    st.session_state.show_login = False
+if "show_register" not in st.session_state:
+    st.session_state.show_register = False
+if "user" not in st.session_state:
+    st.session_state.user = None
 
+user = st.session_state.user
+
+# ========== Без авторизации ==========
 if not user:
-    # Показываем только опрос
+    st.title("📋 Survey")
     survey.run()
 
     col1, col2 = st.columns(2)
 
     with col1:
         if st.button("🔐 Login"):
-            st.switch_page("login.py")
+            st.session_state.show_login = not st.session_state.show_login
+            st.session_state.show_register = False
 
     with col2:
         if st.button("📝 Register"):
-            st.switch_page("content/register.py")
+            st.session_state.show_register = not st.session_state.show_register
+            st.session_state.show_login = False
 
+    # ==== Login form ====
+    if st.session_state.show_login:
+        st.subheader("🔐 Login")
+        login_email = st.text_input("Email", key="login_email")
+        login_password = st.text_input("Password", type="password", key="login_password")
+        if st.button("Login now"):
+            user = get_user_by_email(login_email)
+            if user and user["password"] == login_password:  # Упрощённая проверка!
+                st.session_state.user = user
+                st.success("Logged in successfully!")
+                st.rerun()
+            else:
+                st.error("Invalid credentials")
+
+    # ==== Registration form ====
+    if st.session_state.show_register:
+        st.subheader("📝 Register")
+        reg_name = st.text_input("Name", key="reg_name")
+        reg_email = st.text_input("Email", key="reg_email")
+        reg_password = st.text_input("Password", type="password", key="reg_password")
+
+        if st.button("Create account"):
+            success = register_user(reg_name, reg_email, reg_password)
+            if success:
+                st.success("Registered successfully! Now log in.")
+                st.session_state.show_register = False
+                st.session_state.show_login = True
+            else:
+                st.error("User with this email already exists.")
+
+# ========== После входа ==========
 else:
     st.sidebar.title("📋 Menu")
-    page = st.sidebar.radio(
-        "Navigation",
-        ["Survey"]
-        + (["Team Lead"] if is_team_lead(user) else [])
-        + (["Settings"] if is_admin(user) else [])
-    )
+    options = ["Survey"]
+    if is_team_lead(user):
+        options.append("Team Lead")
+    if is_admin(user):
+        options.append("Settings")
+    options.append("Logout")
+
+    page = st.sidebar.radio("Navigation", options)
 
     if page == "Survey":
         survey.run()
@@ -76,6 +159,11 @@ else:
         teamlead_view.run()
     elif page == "Settings":
         settings.run()
+    elif page == "Logout":
+        st.session_state.user = None
+        st.success("Logged out.")
+        st.rerun()
+
 
 # import streamlit as st
 # import pandas as pd
