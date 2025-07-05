@@ -118,7 +118,7 @@ if not user:
         hashed_pw = hash_password(login_password)
         st.success(hashed_pw)
         st.success(login_password)
-        st.success(user["password"])
+        # st.success(user["password"])
         # hash_password(password)
         if st.button("Login now"):
             user = get_user_by_email(login_email)
