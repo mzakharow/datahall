@@ -39,7 +39,7 @@
 #         settings.run()
 
 import streamlit as st
-from content import survey, teamlead_view, settings, login
+from content import survey, teamlead_view, settings
 from auth import get_user_by_email, is_team_lead, is_admin
 
 st.set_page_config(page_title="Survey App", layout="wide")
@@ -55,7 +55,7 @@ if not user:
 
     with col1:
         if st.button("🔐 Login"):
-            st.switch_page("content/login.py")
+            st.switch_page("login.py")
 
     with col2:
         if st.button("📝 Register"):
