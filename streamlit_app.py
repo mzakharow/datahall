@@ -51,15 +51,15 @@ if not user:
     # Показываем только опрос
     survey.run()
 
-    st.info("🔐 Please log in or register:")
+    col1, col2 = st.columns(2)
 
-    col1, col2 = st.columns([1, 1])
     with col1:
         if st.button("🔐 Login"):
-            st.switch_page("pages/1_Login.py")
+            st.switch_page("context/login.py")
+
     with col2:
         if st.button("📝 Register"):
-            st.switch_page("pages/2_Register.py")
+            st.switch_page("context/register.py")
 
 else:
     st.sidebar.title("📋 Menu")
