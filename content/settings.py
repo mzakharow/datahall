@@ -60,7 +60,7 @@ def run():
                 st.success("Done")
                 st.rerun()
 
-    # ====== АКТИВНОСТИ ======
+    # ====== Activities ======
     with col2:
         st.subheader("Activities")
 
@@ -108,7 +108,7 @@ def run():
                 st.success("Done")
                 st.rerun()
 
-    # ====== ТЕХНИКИ ======
+    # ====== Technicians ======
     st.subheader("👷 Technicians")
 
     with engine.connect() as conn:
