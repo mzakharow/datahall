@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from sqlalchemy import text
 from db import get_engine
+from auth import get_user_by_email
 
 def run():
     st.title("📋 Survey")
