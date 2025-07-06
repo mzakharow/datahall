@@ -47,6 +47,28 @@ def run():
             st.session_state.email_checked = True
             st.session_state.user_data = dict(row._mapping)
             st.success("Email success!")
+
+            # ===== Загрузка последних данных за сегодня =====
+            with engine.connect() as conn:
+                latest_task = conn.execute(text("""
+                    SELECT location_id, activity_id, rack 
+                    FROM technician_tasks
+                    WHERE technician_id = :tech_id AND DATE(timestamp) = :today
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                """), {
+                    "tech_id": st.session_state.user_data["id"],
+                    "today": date.today()
+                }).first()
+
+                if latest_task:
+                    st.session_state.last_location_id = latest_task.location_id
+                    st.session_state.last_activity_id = latest_task.activity_id
+                    st.session_state.last_rack = latest_task.rack
+                else:
+                    st.session_state.last_location_id = None
+                    st.session_state.last_activity_id = None
+                    st.session_state.last_rack = ""
         else:
             st.error("Email doesn't exist")
 
