@@ -92,6 +92,7 @@ else:
         options.append("Team Lead")
     if is_admin(user):
         options.append("Settings")
+        options.append("Reports")
     options.append("Logout")
 
     page = st.sidebar.radio("Navigation", options)
@@ -102,6 +103,8 @@ else:
         teamlead_view.run()
     elif page == "Settings":
         settings.run()
+    elif page == "Reports":
+        reports.run()    
     elif page == "Logout":
         st.session_state.user = None
         st.success("Logged out.")
