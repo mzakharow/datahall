@@ -1,12 +1,10 @@
 import bcrypt
 from sqlalchemy import create_engine, text
 import streamlit as st
+from db import get_engine
 
-# Настройки подключения к БД
 db = st.secrets["database"]
-engine = create_engine(
-    f"postgresql+psycopg2://{db.user}:{db.password}@{db.host}:{db.port}/{db.dbname}"
-)
+engine = get_engine()
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -27,7 +25,7 @@ def get_user_by_email(email: str) -> dict | None:
 
 def register_user(name: str, email: str, password: str) -> bool:
     if get_user_by_email(email):
-        return False  # Email уже существует
+        return False  # Email already exist
 
     hashed_pw = hash_password(password)
     with engine.begin() as conn:
