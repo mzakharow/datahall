@@ -77,12 +77,12 @@ def run():
                     "timestamp": datetime.now()
                 }
 
-            # Save to DB (optional)
-            # with engine.begin() as conn:
-            #     conn.execute(text("""
-            #         INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
-            #         VALUES (:technician_id, :location_id, :activity_id, :timestamp)
-            #     """), response)
+                # Save to DB (optional)
+                # with engine.begin() as conn:
+                #     conn.execute(text("""
+                #         INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
+                #         VALUES (:technician_id, :location_id, :activity_id, :timestamp)
+                #     """), response)
 
-            st.success("Saved!")
-            st.json(response)
+                st.success("Saved!")
+                st.json(response)
