@@ -9,10 +9,15 @@ def run():
 
     engine = get_engine()
 
+    query_params = st.query_params
+    url_email = query_params.get("email", "").lower()
+    
     if "email_checked" not in st.session_state:
         st.session_state.email_checked = False
     if "user_data" not in st.session_state:
         st.session_state.user_data = None
+    if "email" not in st.session_state:
+        st.session_state.email = url_email
 
     query_params = st.query_params
     if "email" not in st.session_state:
