@@ -37,10 +37,13 @@ def run():
     with engine.connect() as conn:
         rows = conn.execute(text("""
             SELECT technician_id, location_id, activity_id, rack
-            FROM technician_tasks
-            WHERE technician_id = ANY(:tech_ids) AND DATE(timestamp) = :today
-            QUALIFY ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) = 1
-        """), {
+            FROM (
+                SELECT *,
+                       ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
+                FROM technician_tasks
+                WHERE technician_id = ANY(:tech_ids) AND DATE(timestamp) = :today
+            ) sub
+            WHERE rn = 1"""), {
             "tech_ids": tech_ids,
             "today": date.today()
         }).fetchall()
