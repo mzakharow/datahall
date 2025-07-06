@@ -62,7 +62,7 @@ def run():
         selected_location = st.selectbox("Select location", list(loc_options.keys()))
         selected_activity = st.selectbox("Select activity", list(act_options.keys()))
 
-        if st.button("Go"):
+        if st.button("Confirm"):
             response = {
                 "email": user["email"],
                 "technician_id": user["id"],
