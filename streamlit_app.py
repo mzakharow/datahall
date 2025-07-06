@@ -1,90 +1,9 @@
-# import streamlit as st
-# from auth import get_user_by_email, is_team_lead, is_admin
-# from content import survey, teamlead_view, settings
-
-# st.set_page_config(page_title="Survey App", layout="wide")
-
-# if "user" not in st.session_state:
-#     st.session_state.user = None
-
-# if st.session_state.user is None:
-#     st.title("🔐 Welcome to the Survey App")
-#     email = st.text_input("Enter your email to log in")
-#     if st.button("Login"):
-#         user = get_user_by_email(email)
-#         if user:
-#             st.session_state.user = user
-#             st.success("Login successful")
-#         else:
-#             st.error("User not found")
-
-#     survey.run()  # Опрос доступен даже без логина
-
-# else:
-#     user = st.session_state.user
-#     st.sidebar.title("📋 Menu")
-#     options = ["Survey"]
-#     if is_team_lead(user):
-#         options.append("Team Lead")
-#     if is_admin(user):
-#         options.append("Settings")
-
-#     choice = st.sidebar.radio("Choose page", options)
-
-#     if choice == "Survey":
-#         survey.run()
-#     elif choice == "Team Lead":
-#         teamlead_view.run()
-#     elif choice == "Settings":
-#         settings.run()
-
-# import streamlit as st
-# from content import survey, teamlead_view, settings
-# from auth import get_user_by_email, is_team_lead, is_admin
-
-# st.set_page_config(page_title="Survey App", layout="wide")
-
-# # Проверка сессии
-# user = st.session_state.get("user", None)
-
-# if not user:
-#     # Показываем только опрос
-#     survey.run()
-
-#     col1, col2 = st.columns(2)
-
-#     with col1:
-#         if st.button("🔐 Login"):
-#             st.switch_page("login.py")
-
-#     with col2:
-#         if st.button("📝 Register"):
-#             st.switch_page("content/register.py")
-
-# else:
-#     st.sidebar.title("📋 Menu")
-#     page = st.sidebar.radio(
-#         "Navigation",
-#         ["Survey"]
-#         + (["Team Lead"] if is_team_lead(user) else [])
-#         + (["Settings"] if is_admin(user) else [])
-#     )
-
-#     if page == "Survey":
-#         survey.run()
-#     elif page == "Team Lead":
-#         teamlead_view.run()
-#     elif page == "Settings":
-#         settings.run()
-
-
 import streamlit as st
 from content import survey, teamlead_view, settings
 from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password
 
 st.set_page_config(page_title="Survey App", layout="wide")
 
-# Состояния кнопок
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 if "show_register" not in st.session_state:
@@ -94,7 +13,7 @@ if "user" not in st.session_state:
 
 user = st.session_state.user
 
-# ========== Без авторизации ==========
+# ========== Without authorization ==========
 if not user:
     survey.run()
 
@@ -122,8 +41,8 @@ if not user:
         # hash_password(password)
         if st.button("Login now"):
             user = get_user_by_email(login_email)
-            if user and user["password"] == login_password:  # Упрощённая проверка!
-            # if user and check_password(user["password"], hash_password(login_password)):
+            # if user and user["password"] == login_password:  # Упрощённая проверка!
+            if user and check_password(login_password, user["password"]):
                 st.session_state.user = user
                 st.success("Logged in successfully!")
                 st.rerun()
