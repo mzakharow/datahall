@@ -14,26 +14,22 @@ def run():
 
     team_lead_id = user["id"]
 
-    # Получение подчинённых техников
     with engine.connect() as conn:
-        technicians = conn.execute(text("""
-            SELECT id, name FROM technicians
+        technicians = conn.execute(text("""SELECT id, name FROM technicians
             WHERE team_lead = :tl_id AND activ = true
-            ORDER BY name
-        """), {"tl_id": team_lead_id}).fetchall()
+            ORDER BY name"""), {"tl_id": team_lead_id}).fetchall()
 
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
 
     if not technicians:
-        st.info("У вас пока нет подчинённых.")
+        st.info("You don't have a team.")
         return
 
     loc_options = {loc.name: loc.id for loc in locations}
     act_options = {act.name: act.id for act in activities}
     tech_options = {tech.name: tech.id for tech in technicians}
 
-    # Подготовка начального DataFrame
     df = pd.DataFrame([{
         "Technician": tech.name,
         "Location": list(loc_options.keys())[0],
@@ -55,7 +51,7 @@ def run():
         }
     )
 
-    if st.button("💾 Назначить задачи"):
+    if st.button("💾 Save tasks"):
         with engine.begin() as conn:
             for _, row in edited_df.iterrows():
                 tech_name = row["Technician"]
@@ -64,10 +60,8 @@ def run():
                 act_id = act_options.get(row["Activity"])
 
                 if tech_id and loc_id and act_id:
-                    conn.execute(text("""
-                        INSERT INTO technician_assignments (technician_id, team_lead_id, location_id, activity_id, created_at)
-                        VALUES (:tech_id, :tl_id, :loc_id, :act_id, :created_at)
-                    """), {
+                    conn.execute(text("""INSERT INTO technician_assignments (technician_id, team_lead_id, location_id, activity_id, created_at)
+                        VALUES (:tech_id, :tl_id, :loc_id, :act_id, :created_at)"""), {
                         "tech_id": tech_id,
                         "tl_id": team_lead_id,
                         "loc_id": loc_id,
@@ -75,7 +69,5 @@ def run():
                         "created_at": datetime.now()
                     })
 
-        st.success("Назначения сохранены ✅")
+        st.success("Changes saved ✅")
         st.rerun()
-    # Таблица уже назначенных задач
-    
