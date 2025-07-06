@@ -11,7 +11,7 @@ def run():
     if not user or not user.get("is_teamlead"):
         st.error("Access denied")
         return
-
+    team_lead_id = user["id"]
     with engine.connect() as conn:
         # Техники в подчинении
         technicians = conn.execute(text("""
