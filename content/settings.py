@@ -16,85 +16,85 @@ def run():
     with col1:
         st.subheader("📍 Locations")
 
-    with engine.connect() as conn:
-        df_loc = pd.read_sql("SELECT id, name FROM locations ORDER BY id", conn)
+        with engine.connect() as conn:
+            df_loc = pd.read_sql("SELECT id, name FROM locations ORDER BY id", conn)
 
-    edited_df = st.data_editor(
-        df_loc.copy(),
-        num_rows="dynamic",
-        use_container_width=True,
-        key="locations_editor"
-    )
+        edited_df = st.data_editor(
+            df_loc.copy(),
+            num_rows="dynamic",
+            use_container_width=True,
+            key="locations_editor"
+        )
 
-    if st.button("💾 Save locations"):
-        seen = set()
-        error = False
+        if st.button("💾 Save locations"):
+            seen = set()
+            error = False
+    
+            with engine.begin() as conn:
+                for i, row in edited_df.iterrows():
+                    name = str(row["name"]).strip()
+                    if not name:
+                        continue
+                    lname = name.lower()
+                    if lname in seen:
+                        st.warning(f"Duplicate location: {name}")
+                        error = True
+                        continue
+                    seen.add(lname)
 
-        with engine.begin() as conn:
-            for i, row in edited_df.iterrows():
-                name = str(row["name"]).strip()
-                if not name:
-                    continue
-                lname = name.lower()
-                if lname in seen:
-                    st.warning(f"Duplicate location: {name}")
-                    error = True
-                    continue
-                seen.add(lname)
+                    if i < len(df_loc):
+                        # Update
+                        conn.execute(text("UPDATE locations SET name = :name WHERE id = :id"),
+                                     {"name": name, "id": int(df_loc.iloc[i]["id"])})
+                    else:
+                        # Insert
+                        conn.execute(text("INSERT INTO locations (name) VALUES (:name)"), {"name": name})
 
-                if i < len(df_loc):
-                    # Update
-                    conn.execute(text("UPDATE locations SET name = :name WHERE id = :id"),
-                                 {"name": name, "id": int(df_loc.iloc[i]["id"])})
-                else:
-                    # Insert
-                    conn.execute(text("INSERT INTO locations (name) VALUES (:name)"), {"name": name})
-
-        if not error:
-            st.success("✅ Locations saved")
-            st.rerun()
+            if not error:
+                st.success("✅ Locations saved")
+                st.rerun()
             
     # ====== Activities ======
     with col2:
-       st.subheader("⚙️ Activities")
+        st.subheader("⚙️ Activities")
 
-    with engine.connect() as conn:
-        df_act = pd.read_sql("SELECT id, name FROM activities ORDER BY id", conn)
+        with engine.connect() as conn:
+            df_act = pd.read_sql("SELECT id, name FROM activities ORDER BY id", conn)
 
-    edited_df = st.data_editor(
-        df_act.copy(),
-        num_rows="dynamic",
-        use_container_width=True,
-        key="activities_editor"
-    )
+        edited_df = st.data_editor(
+            df_act.copy(),
+            num_rows="dynamic",
+            use_container_width=True,
+            key="activities_editor"
+        )
 
-    if st.button("💾 Save activities"):
-        seen = set()
-        error = False
+        if st.button("💾 Save activities"):
+            seen = set()
+            error = False
 
-        with engine.begin() as conn:
-            for i, row in edited_df.iterrows():
-                name = str(row["name"]).strip()
-                if not name:
-                    continue
-                lname = name.lower()
-                if lname in seen:
-                    st.warning(f"Duplicate activity: {name}")
-                    error = True
-                    continue
-                seen.add(lname)
+            with engine.begin() as conn:
+                for i, row in edited_df.iterrows():
+                    name = str(row["name"]).strip()
+                    if not name:
+                        continue
+                    lname = name.lower()
+                    if lname in seen:
+                        st.warning(f"Duplicate activity: {name}")
+                        error = True
+                        continue
+                    seen.add(lname)
 
-                if i < len(df_act):
-                    # Update
-                    conn.execute(text("UPDATE activities SET name = :name WHERE id = :id"),
-                                 {"name": name, "id": int(df_act.iloc[i]["id"])})
-                else:
-                    # Insert
-                    conn.execute(text("INSERT INTO activities (name) VALUES (:name)"), {"name": name})
+                    if i < len(df_act):
+                        # Update
+                        conn.execute(text("UPDATE activities SET name = :name WHERE id = :id"),
+                                     {"name": name, "id": int(df_act.iloc[i]["id"])})
+                    else:
+                        # Insert
+                        conn.execute(text("INSERT INTO activities (name) VALUES (:name)"), {"name": name})
 
-        if not error:
-            st.success("✅ Activities saved")
-            st.rerun()
+            if not error:
+                st.success("✅ Activities saved")
+                st.rerun()
 
     # ====== Technicians ======
     st.subheader("👷 Technicians")
