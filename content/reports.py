@@ -22,26 +22,29 @@ def run():
         if show_latest_only:
             query = """
                 SELECT 
-                    t.id,
-                    t.technician_id,
-                    tech.name AS technician,
-                    tl.name AS team_lead,
-                    loc.name AS location,
-                    act.name AS activity,
-                    t.rack,
-                    t.timestamp
-                FROM (
-                    SELECT *,
-                           ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) AS rn
-                    FROM technician_tasks
-                    WHERE DATE(timestamp) = :selected_date
-                ) t
-                JOIN technicians tech ON tech.id = t.technician_id
-                LEFT JOIN technicians tl ON tl.id = t.source
-                LEFT JOIN locations loc ON loc.id = t.location_id
-                LEFT JOIN activities act ON act.id = t.activity_id
-                WHERE t.rn = 1
-                ORDER BY t.timestamp DESC
+    tech.id AS technician_id,
+    tech.name AS technician,
+    COALESCE(tl.name, '—') AS team_lead,
+    loc.name AS location,
+    act.name AS activity,
+    task.rack,
+    task.timestamp
+FROM technicians tech
+LEFT JOIN technicians tl ON tech.team_lead = tl.id
+LEFT JOIN (
+    SELECT *
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) AS rn
+        FROM technician_tasks
+        WHERE DATE(timestamp) = :selected_date
+    ) sub
+    WHERE rn = 1
+) task ON task.technician_id = tech.id
+LEFT JOIN locations loc ON task.location_id = loc.id
+LEFT JOIN activities act ON task.activity_id = act.id
+WHERE tech.activ = true
+ORDER BY tech.name
             """
         else:
             query = """
