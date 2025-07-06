@@ -82,7 +82,7 @@ def run():
                 # Save to DB (optional)
                 with engine.begin() as conn:
                     conn.execute(text("""
-                        INSERT INTO technician_responses (technician_id, location_id, activity_id, rack, timestamp)
+                        INSERT INTO technician_tasks (technician_id, location_id, activity_id, rack, timestamp)
                         VALUES (:technician_id, :location_id, :activity_id, :rack, :timestamp)
                     """), response)
 
