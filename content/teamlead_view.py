@@ -72,28 +72,28 @@ def run():
     )
 
     if st.button("💾 Save tasks"):
-    with engine.begin() as conn:
-        for _, row in edited_df.iterrows():
-            tech_name = row["Technician"]
-            tech_id = tech_options.get(tech_name)
-            loc_id = loc_options.get(row["Location"])
-            act_id = act_options.get(row["Activity"])
-            rack = str(row.get("Rack", "")).strip()[:5]
+        with engine.begin() as conn:
+            for _, row in edited_df.iterrows():
+                tech_name = row["Technician"]
+                tech_id = tech_options.get(tech_name)
+                loc_id = loc_options.get(row["Location"])
+                act_id = act_options.get(row["Activity"])
+                rack = str(row.get("Rack", "")).strip()[:5]
 
-            if tech_id and loc_id and act_id:
-                conn.execute(text("""
-                    INSERT INTO technician_tasks (
-                        technician_id, location_id, activity_id, rack, source, timestamp
-                    )
-                    VALUES (:tech_id, :loc_id, :act_id, :rack, :source, :timestamp)
-                """), {
-                    "tech_id": tech_id,
-                    "loc_id": loc_id,
-                    "act_id": act_id,
-                    "rack": rack,
-                    "source": team_lead_id,
-                    "timestamp": datetime.now()
-                })
+                if tech_id and loc_id and act_id:
+                    conn.execute(text("""
+                        INSERT INTO technician_tasks (
+                            technician_id, location_id, activity_id, rack, source, timestamp
+                        )
+                        VALUES (:tech_id, :loc_id, :act_id, :rack, :source, :timestamp)
+                    """), {
+                        "tech_id": tech_id,
+                        "loc_id": loc_id,
+                        "act_id": act_id,
+                        "rack": rack,
+                        "source": team_lead_id,
+                        "timestamp": datetime.now()
+                    })
 
-    st.success("✅ Changes saved!")
-    st.rerun()
+        st.success("✅ Changes saved!")
+        st.rerun()
