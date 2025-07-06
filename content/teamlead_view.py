@@ -80,7 +80,9 @@ def run():
                 act_id = act_options.get(row["Activity"])
                 rack = str(row.get("Rack", "")).strip()[:5]
 
-                if tech_id and loc_id and act_id:
+                if tech_id and loc_id:
+                    if not act_id:
+                        act_id = None
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
                             technician_id, location_id, activity_id, rack, source, timestamp
