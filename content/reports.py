@@ -46,7 +46,7 @@ def run():
             LEFT JOIN activities a ON task.activity_id = a.id
             WHERE DATE(task.timestamp) = :selected_date
             ORDER BY task.timestamp DESC
-        """
+            """
         # rows = conn.execute(text("""
         #     SELECT t.name AS technician, tl.name AS team_lead,
         #            l.name AS location, a.name AS activity,
