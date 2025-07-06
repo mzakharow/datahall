@@ -21,6 +21,15 @@ def run():
     email = st.text_input("Enter email", value=st.session_state.email)
     st.session_state.email = email
 
+    if url_email and not st.session_state.email_checked:
+        user = get_user_by_email(url_email)
+        if user:
+            st.session_state.user_data = user
+            st.session_state.email_checked = True
+            st.success("Email auto-verified from link!")
+        else:
+            st.error("User not found.")
+
     if st.button("Check email"):
         with engine.connect() as conn:
             row = conn.execute(
