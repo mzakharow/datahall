@@ -61,6 +61,7 @@ def run():
 
         selected_location = st.selectbox("Select location", list(loc_options.keys()))
         selected_activity = st.selectbox("Select activity", list(act_options.keys()))
+        rack_input = st.text_input("Rack (up to 5 characters)").strip()[:5]
 
         if st.button("Confirm"):
             confirmed_email = st.session_state.user_data["email"].strip().lower()
@@ -74,15 +75,16 @@ def run():
                     "technician_id": user["id"],
                     "location_id": loc_options[selected_location],
                     "activity_id": act_options[selected_activity],
+                    "rack": rack_input,
                     "timestamp": datetime.now()
                 }
 
                 # Save to DB (optional)
-                # with engine.begin() as conn:
-                #     conn.execute(text("""
-                #         INSERT INTO technician_responses (technician_id, location_id, activity_id, timestamp)
-                #         VALUES (:technician_id, :location_id, :activity_id, :timestamp)
-                #     """), response)
+                with engine.begin() as conn:
+                    conn.execute(text("""
+                        INSERT INTO technician_responses (technician_id, location_id, activity_id, rack, timestamp)
+                        VALUES (:technician_id, :location_id, :activity_id, :rack, :timestamp)
+                    """), response)
 
                 st.success("Saved!")
                 st.json(response)
