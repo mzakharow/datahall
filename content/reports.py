@@ -63,7 +63,7 @@ def run():
     # if not rows:
     #     st.info("No tasks found for the selected date.")
     #     return
-    df = pd.read_sql_query(text(query), conn, params={"selected_date": selected_date})
+        df = pd.read_sql_query(text(query), conn, params={"selected_date": selected_date})
     # df = pd.DataFrame([dict(row._mapping) for row in rows])
 
     # Фильтры по полям
