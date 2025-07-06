@@ -63,13 +63,19 @@ def run():
         selected_activity = st.selectbox("Select activity", list(act_options.keys()))
 
         if st.button("Confirm"):
-            response = {
-                "email": user["email"],
-                "technician_id": user["id"],
-                "location_id": loc_options[selected_location],
-                "activity_id": act_options[selected_activity],
-                "timestamp": datetime.now()
-            }
+            confirmed_email = st.session_state.user_data["email"].strip().lower()
+            current_email = st.session_state.email.strip().lower()
+
+            if current_email != confirmed_email:
+                st.error("⚠️ Email doesn't match the verified one. Please use the confirmed email.")
+            else:
+                response = {
+                    "email": confirmed_email,
+                    "technician_id": user["id"],
+                    "location_id": loc_options[selected_location],
+                    "activity_id": act_options[selected_activity],
+                    "timestamp": datetime.now()
+                }
 
             # Save to DB (optional)
             # with engine.begin() as conn:
