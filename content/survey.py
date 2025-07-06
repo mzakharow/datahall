@@ -132,8 +132,8 @@ def run():
 
                 with engine.begin() as conn:
                     conn.execute(text("""
-                        INSERT INTO technician_tasks (technician_id, location_id, activity_id, rack, timestamp)
-                        VALUES (:technician_id, :location_id, :activity_id, :rack, :timestamp)
+                        INSERT INTO technician_tasks (technician_id, location_id, activity_id, rack, source, timestamp)
+                        VALUES (:technician_id, :location_id, :activity_id, :rack, :technician_id, :timestamp)
                     """), response)
 
                 st.success("Saved!")
