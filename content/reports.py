@@ -60,9 +60,9 @@ def run():
         #     ORDER BY task.timestamp DESC
         # """), {"selected_date": selected_date}).fetchall()
 
-    if not rows:
-        st.info("No tasks found for the selected date.")
-        return
+    # if not rows:
+    #     st.info("No tasks found for the selected date.")
+    #     return
     df = pd.read_sql_query(text(query), conn, params={"selected_date": selected_date})
     # df = pd.DataFrame([dict(row._mapping) for row in rows])
 
