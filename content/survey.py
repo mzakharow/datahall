@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy import text
 from db import get_engine
 from auth import get_user_by_email
@@ -12,7 +12,7 @@ def run():
 
     query_params = st.query_params
     url_email = query_params.get("email", "").lower()
-    
+
     if "email_checked" not in st.session_state:
         st.session_state.email_checked = False
     if "user_data" not in st.session_state:
@@ -20,22 +20,41 @@ def run():
     if "email" not in st.session_state:
         st.session_state.email = url_email
 
-    query_params = st.query_params
-    if "email" not in st.session_state:
-        st.session_state.email = query_params.get("email", "")
-
     email = st.text_input("Enter email", value=st.session_state.email)
     st.session_state.email = email
 
+    # Автоматическая проверка email из ссылки
     if url_email and not st.session_state.email_checked:
         user = get_user_by_email(url_email)
         if user:
             st.session_state.user_data = user
             st.session_state.email_checked = True
             st.success("Email auto-verified from link!")
+            # Загрузка последних данных
+            with engine.connect() as conn:
+                latest_task = conn.execute(text("""
+                    SELECT location_id, activity_id, rack 
+                    FROM technician_tasks
+                    WHERE technician_id = :tech_id AND DATE(timestamp) = :today
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                """), {
+                    "tech_id": user["id"],
+                    "today": date.today()
+                }).first()
+
+                if latest_task:
+                    st.session_state.last_location_id = latest_task.location_id
+                    st.session_state.last_activity_id = latest_task.activity_id
+                    st.session_state.last_rack = latest_task.rack
+                else:
+                    st.session_state.last_location_id = None
+                    st.session_state.last_activity_id = None
+                    st.session_state.last_rack = ""
         else:
             st.error("User not found.")
 
+    # Ручная проверка email
     if st.button("Check email"):
         with engine.connect() as conn:
             row = conn.execute(
@@ -73,16 +92,6 @@ def run():
 
     if st.session_state.email_checked:
         user = st.session_state.user_data
-        # with engine.connect() as conn:
-        #     locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
-        #     activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
-
-        # loc_options = {loc.name: loc.id for loc in locations}
-        # act_options = {act.name: act.id for act in activities}
-
-        # selected_location = st.selectbox("Select location", list(loc_options.keys()))
-        # selected_activity = st.selectbox("Select activity", list(act_options.keys()))
-        # rack_input = st.text_input("Rack (up to 5 characters)").strip()[:5]
 
         with engine.connect() as conn:
             locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
@@ -97,10 +106,13 @@ def run():
         default_act = next((name for name, id_ in act_options.items()
                             if id_ == st.session_state.get("last_activity_id")), None)
 
-        selected_location = st.selectbox("Select location", list(loc_options.keys()), index=list(loc_options.keys()).index(default_loc) if default_loc else 0)
-        selected_activity = st.selectbox("Select activity", list(act_options.keys()), index=list(act_options.keys()).index(default_act) if default_act else 0)
+        selected_location = st.selectbox("Select location", list(loc_options.keys()), 
+            index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
 
-        rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", ""))[:5]
+        selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
+            index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
+
+        rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
 
         if st.button("Confirm"):
             confirmed_email = st.session_state.user_data["email"].strip().lower()
@@ -118,7 +130,6 @@ def run():
                     "timestamp": datetime.now()
                 }
 
-                # Save to DB (optional)
                 with engine.begin() as conn:
                     conn.execute(text("""
                         INSERT INTO technician_tasks (technician_id, location_id, activity_id, rack, timestamp)
