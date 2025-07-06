@@ -16,7 +16,7 @@ def run():
     engine = get_engine()
 
     selected_date = st.date_input("Select date", value=date.today())
-    show_latest_only = st.checkbox("Show current data", value=True)
+    show_latest_only = st.checkbox("Show current tasks", value=True)
 
     with engine.connect() as conn:
         if show_latest_only:
