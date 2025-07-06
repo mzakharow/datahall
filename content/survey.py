@@ -48,7 +48,6 @@ def run():
             st.session_state.user_data = dict(row._mapping)
             st.success("Email success!")
 
-            # ===== Загрузка последних данных за сегодня =====
             with engine.connect() as conn:
                 latest_task = conn.execute(text("""
                     SELECT location_id, activity_id, rack 
@@ -74,6 +73,17 @@ def run():
 
     if st.session_state.email_checked:
         user = st.session_state.user_data
+        # with engine.connect() as conn:
+        #     locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
+        #     activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
+
+        # loc_options = {loc.name: loc.id for loc in locations}
+        # act_options = {act.name: act.id for act in activities}
+
+        # selected_location = st.selectbox("Select location", list(loc_options.keys()))
+        # selected_activity = st.selectbox("Select activity", list(act_options.keys()))
+        # rack_input = st.text_input("Rack (up to 5 characters)").strip()[:5]
+
         with engine.connect() as conn:
             locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
             activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
@@ -81,9 +91,16 @@ def run():
         loc_options = {loc.name: loc.id for loc in locations}
         act_options = {act.name: act.id for act in activities}
 
-        selected_location = st.selectbox("Select location", list(loc_options.keys()))
-        selected_activity = st.selectbox("Select activity", list(act_options.keys()))
-        rack_input = st.text_input("Rack (up to 5 characters)").strip()[:5]
+        default_loc = next((name for name, id_ in loc_options.items()
+                            if id_ == st.session_state.get("last_location_id")), None)
+
+        default_act = next((name for name, id_ in act_options.items()
+                            if id_ == st.session_state.get("last_activity_id")), None)
+
+        selected_location = st.selectbox("Select location", list(loc_options.keys()), index=list(loc_options.keys()).index(default_loc) if default_loc else 0)
+        selected_activity = st.selectbox("Select activity", list(act_options.keys()), index=list(act_options.keys()).index(default_act) if default_act else 0)
+
+        rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", ""))[:5]
 
         if st.button("Confirm"):
             confirmed_email = st.session_state.user_data["email"].strip().lower()
