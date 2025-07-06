@@ -27,16 +27,28 @@ if not user:
 
     col1, col2 = st.columns(2)
 
-    with col1:
-        if st.button("🔐 Login"):
-            st.session_state.show_login = not st.session_state.show_login
-            st.session_state.show_register = False
+    # with col1:
+    #     if st.button("🔐 Login"):
+    #         st.session_state.show_login = not st.session_state.show_login
+    #         st.session_state.show_register = False
 
-    with col2:
-        if st.button("📝 Register"):
-            st.session_state.show_register = not st.session_state.show_register
-            st.session_state.show_login = False
+    # with col2:
+    #     if st.button("📝 Register"):
+    #         st.session_state.show_register = not st.session_state.show_register
+    #         st.session_state.show_login = False
 
+    col_space, col_buttons = st.columns([10, 2])  # подогнать ширину под нужды
+    with col_buttons:
+        col_login, col_register = st.columns([1, 1])
+        with col_login:
+            if st.button("🔐 Login"):
+                st.session_state.show_login = not st.session_state.show_login
+                st.session_state.show_register = False
+        with col_register:
+            if st.button("📝 Register"):
+                st.session_state.show_register = not st.session_state.show_register
+                st.session_state.show_login = False
+            
     # ==== Login form ====
     if st.session_state.show_login:
         st.subheader("🔐 Login")
