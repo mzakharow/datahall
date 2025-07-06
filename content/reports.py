@@ -47,26 +47,14 @@ def run():
             WHERE DATE(task.timestamp) = :selected_date
             ORDER BY task.timestamp DESC
             """
-        # rows = conn.execute(text("""
-        #     SELECT t.name AS technician, tl.name AS team_lead,
-        #            l.name AS location, a.name AS activity,
-        #            task.rack, task.timestamp
-        #     FROM technician_tasks task
-        #     LEFT JOIN technicians t ON task.technician_id = t.id
-        #     LEFT JOIN technicians tl ON task.source = tl.id
-        #     LEFT JOIN locations l ON task.location_id = l.id
-        #     LEFT JOIN activities a ON task.activity_id = a.id
-        #     WHERE DATE(task.timestamp) = :selected_date
-        #     ORDER BY task.timestamp DESC
-        # """), {"selected_date": selected_date}).fetchall()
+        rows = conn.execute(text(query), {"selected_date": selected_date}).fetchall()
 
-    # if not rows:
-    #     st.info("No tasks found for the selected date.")
-    #     return
-        df = pd.read_sql_query(text(query), conn, params={"selected_date": selected_date})
-    # df = pd.DataFrame([dict(row._mapping) for row in rows])
+    if not rows:
+        st.info("No tasks found for the selected date.")
+        return
 
-    # Фильтры по полям
+    df = pd.DataFrame([dict(row._mapping) for row in rows])
+
     with st.expander("🔍 Filters"):
         for col in ["technician", "team_lead", "location", "activity", "rack"]:
             options = df[col].dropna().unique().tolist()
@@ -76,7 +64,6 @@ def run():
 
     st.dataframe(df, use_container_width=True)
     st.caption(f"Total records: {len(df)}")
-
 
 
 
