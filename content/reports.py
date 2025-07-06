@@ -21,7 +21,7 @@ def run():
     with engine.connect() as conn:
         if show_latest_only:
             query = """
-                SELECT t.id, t.technician_id, tech.name AS technician_name, t.location_id, loc.name AS location,
+                SELECT t.id, t.technician_id, tech.name AS technician, t.location_id, loc.name AS location,
                        t.activity_id, act.name AS activity, t.rack, t.timestamp, t.source
                 FROM (
                     SELECT *,
