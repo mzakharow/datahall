@@ -2,7 +2,6 @@ from db import get_engine
 import pandas as pd
 import streamlit as st
 from sqlalchemy import text
-from db import get_engine
 import re
 
 def run():
@@ -29,7 +28,7 @@ def run():
         if st.button("💾 Save locations"):
             seen = set()
             error = False
-    
+
             with engine.begin() as conn:
                 for i, row in edited_df.iterrows():
                     name = str(row["name"]).strip()
@@ -50,10 +49,18 @@ def run():
                         # Insert
                         conn.execute(text("INSERT INTO locations (name) VALUES (:name)"), {"name": name})
 
+                # Delete removed rows
+                old_ids = set(df_loc["id"])
+                new_ids = set(edited_df.index[:len(df_loc)])
+                deleted_ids = old_ids - new_ids
+                for del_id in deleted_ids:
+                    conn.execute(text("DELETE FROM technician_tasks WHERE location_id = :id"), {"id": int(df_loc.iloc[del_id]["id"])})
+                    conn.execute(text("DELETE FROM locations WHERE id = :id"), {"id": int(df_loc.iloc[del_id]["id"])})
+
             if not error:
                 st.success("✅ Locations saved")
                 st.rerun()
-            
+
     # ====== Activities ======
     with col2:
         st.subheader("⚙️ Activities")
@@ -92,6 +99,14 @@ def run():
                         # Insert
                         conn.execute(text("INSERT INTO activities (name) VALUES (:name)"), {"name": name})
 
+                # Delete removed rows
+                old_ids = set(df_act["id"])
+                new_ids = set(edited_df.index[:len(df_act)])
+                deleted_ids = old_ids - new_ids
+                for del_id in deleted_ids:
+                    conn.execute(text("DELETE FROM technician_tasks WHERE activity_id = :id"), {"id": int(df_act.iloc[del_id]["id"])})
+                    conn.execute(text("DELETE FROM activities WHERE id = :id"), {"id": int(df_act.iloc[del_id]["id"])})
+
             if not error:
                 st.success("✅ Activities saved")
                 st.rerun()
@@ -102,11 +117,10 @@ def run():
     with engine.connect() as conn:
         df_tech = pd.read_sql("SELECT * FROM technicians ORDER BY id", conn)
 
-    # Словари ID → имя
     all_names = {row["id"]: row["name"] for _, row in df_tech.iterrows()}
     team_leads = {row["id"]: row["name"] for _, row in df_tech.iterrows() if row.get("is_teamlead")}
 
-    tech_display = df_tech[["id", "name", "email", "team_lead", "activ", "is_teamlead","admin"]].copy()
+    tech_display = df_tech[["id", "name", "email", "team_lead", "activ", "is_teamlead", "admin"]].copy()
     tech_display["del"] = False
     tech_display["team_lead_name"] = tech_display["team_lead"].map(team_leads).fillna("—")
 
@@ -183,6 +197,7 @@ def run():
                 else:
                     tech_id = df_tech.iloc[idx]["id"]
                     if to_delete:
+                        conn.execute(text("DELETE FROM technician_tasks WHERE technician_id = :id"), {"id": int(tech_id)})
                         conn.execute(text("DELETE FROM technicians WHERE id = :id"), {"id": int(tech_id)})
                     else:
                         conn.execute(text("""
