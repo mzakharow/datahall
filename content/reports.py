@@ -4,8 +4,10 @@ from sqlalchemy import text
 from datetime import date
 from db import get_engine
 from auth import is_admin
+from zoneinfo import ZoneInfo
 
 def run():
+    LOCAL_TIMEZONE = ZoneInfo("America/Chicago")
     st.title("📊 Technician Tasks Report")
 
     user = st.session_state.get("user")
@@ -22,29 +24,29 @@ def run():
         if show_latest_only:
             query = """
                 SELECT 
-    tech.id AS technician_id,
-    tech.name AS technician,
-    COALESCE(tl.name, '—') AS team_lead,
-    loc.name AS location,
-    act.name AS activity,
-    task.rack,
-    task.timestamp
-FROM technicians tech
-LEFT JOIN technicians tl ON tech.team_lead = tl.id
-LEFT JOIN (
-    SELECT *
-    FROM (
-        SELECT *,
-               ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) AS rn
-        FROM technician_tasks
-        WHERE DATE(timestamp) = :selected_date
-    ) sub
-    WHERE rn = 1
-) task ON task.technician_id = tech.id
-LEFT JOIN locations loc ON task.location_id = loc.id
-LEFT JOIN activities act ON task.activity_id = act.id
-WHERE tech.activ = true
-ORDER BY tech.name
+                    tech.id AS technician_id,
+                    tech.name AS technician,
+                    COALESCE(tl.name, '—') AS team_lead,
+                    loc.name AS location,
+                    act.name AS activity,
+                    task.rack,
+                    task.timestamp
+                FROM technicians tech
+                LEFT JOIN technicians tl ON tech.team_lead = tl.id
+                LEFT JOIN (
+                    SELECT *
+                    FROM (
+                        SELECT *,
+                               ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) AS rn
+                        FROM technician_tasks
+                        WHERE DATE(timestamp) = :selected_date
+                    ) sub
+                    WHERE rn = 1
+                ) task ON task.technician_id = tech.id
+                LEFT JOIN locations loc ON task.location_id = loc.id
+                LEFT JOIN activities act ON task.activity_id = act.id
+                WHERE tech.activ = true
+                ORDER BY tech.name
             """
         else:
             query = """
@@ -71,7 +73,10 @@ ORDER BY tech.name
         return
 
     df = pd.DataFrame([dict(row._mapping) for row in rows])
-
+    
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(LOCAL_TIMEZONE)
+    
     with st.expander("🔍 Filters"):
         for col in ["technician", "team_lead", "location", "activity", "rack"]:
             if col in df.columns:
