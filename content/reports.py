@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import text
-from datetime import date, datetime
+from datetime import datetime, timedelta
 from db import get_engine
 from auth import is_admin
 from zoneinfo import ZoneInfo
 
 def run():
-    
     st.title("📊 Technician Tasks Report")
 
     user = st.session_state.get("user")
@@ -17,13 +16,21 @@ def run():
 
     engine = get_engine()
 
-    LOCAL_TIMEZONE = "America/Chicago"
-    now_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE))
+    # Указываем временную зону сервера/клиента
+    LOCAL_TIMEZONE = ZoneInfo("America/Chicago")
+    now_local = datetime.now(LOCAL_TIMEZONE)
     today_local = now_local.date()
-    selected_date = st.date_input("Select date", value=today_local)
 
-    # selected_date = st.date_input("Select date", value=date.today())
+    selected_date_local = st.date_input("Select date", value=today_local)
     show_latest_only = st.checkbox("Show current tasks", value=True)
+
+    # Начало и конец выбранного дня в локальной зоне
+    start_local = datetime.combine(selected_date_local, datetime.min.time(), tzinfo=LOCAL_TIMEZONE)
+    end_local = start_local + timedelta(days=1)
+
+    # Преобразуем в UTC
+    start_utc = start_local.astimezone(ZoneInfo("UTC"))
+    end_utc = end_local.astimezone(ZoneInfo("UTC"))
 
     with engine.connect() as conn:
         if show_latest_only:
@@ -44,7 +51,7 @@ def run():
                         SELECT *,
                                ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) AS rn
                         FROM technician_tasks
-                        WHERE DATE(timestamp) = :selected_date
+                        WHERE timestamp >= :start_utc AND timestamp < :end_utc
                     ) sub
                     WHERE rn = 1
                 ) task ON task.technician_id = tech.id
@@ -67,21 +74,24 @@ def run():
                 LEFT JOIN technicians tl ON task.source = tl.id
                 LEFT JOIN locations l ON task.location_id = l.id
                 LEFT JOIN activities a ON task.activity_id = a.id
-                WHERE DATE(task.timestamp) = :selected_date
+                WHERE task.timestamp >= :start_utc AND task.timestamp < :end_utc
                 ORDER BY task.timestamp DESC
             """
 
-        rows = conn.execute(text(query), {"selected_date": selected_date}).fetchall()
+        rows = conn.execute(text(query), {
+            "start_utc": start_utc,
+            "end_utc": end_utc
+        }).fetchall()
 
     if not rows:
         st.info("No tasks found for the selected date.")
         return
 
     df = pd.DataFrame([dict(row._mapping) for row in rows])
-    
+
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(LOCAL_TIMEZONE)
-    
+
     with st.expander("🔍 Filters"):
         for col in ["technician", "team_lead", "location", "activity", "rack"]:
             if col in df.columns:
