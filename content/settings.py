@@ -30,6 +30,8 @@ def run():
             error = False
 
             with engine.begin() as conn:
+                new_ids = []
+
                 for i, row in edited_df.iterrows():
                     name = str(row["name"]).strip()
                     if not name:
@@ -42,20 +44,23 @@ def run():
                     seen.add(lname)
 
                     if i < len(df_loc):
+                        id_ = int(df_loc.iloc[i]["id"])
+                        new_ids.append(id_)
                         # Update
                         conn.execute(text("UPDATE locations SET name = :name WHERE id = :id"),
-                                     {"name": name, "id": int(df_loc.iloc[i]["id"])})
+                                     {"name": name, "id": id_})
                     else:
                         # Insert
-                        conn.execute(text("INSERT INTO locations (name) VALUES (:name)"), {"name": name})
+                        result = conn.execute(text("INSERT INTO locations (name) VALUES (:name) RETURNING id"), {"name": name})
+                        new_id = result.scalar()
+                        new_ids.append(new_id)
 
-                # Delete removed rows
+                # Delete removed
                 old_ids = set(df_loc["id"])
-                new_ids = set(edited_df.index[:len(df_loc)])
-                deleted_ids = old_ids - new_ids
+                deleted_ids = old_ids - set(new_ids)
                 for del_id in deleted_ids:
-                    conn.execute(text("DELETE FROM technician_tasks WHERE location_id = :id"), {"id": int(df_loc.iloc[del_id]["id"])})
-                    conn.execute(text("DELETE FROM locations WHERE id = :id"), {"id": int(df_loc.iloc[del_id]["id"])})
+                    conn.execute(text("DELETE FROM technician_tasks WHERE location_id = :id"), {"id": del_id})
+                    conn.execute(text("DELETE FROM locations WHERE id = :id"), {"id": del_id})
 
             if not error:
                 st.success("✅ Locations saved")
@@ -80,6 +85,8 @@ def run():
             error = False
 
             with engine.begin() as conn:
+                new_ids = []
+
                 for i, row in edited_df.iterrows():
                     name = str(row["name"]).strip()
                     if not name:
@@ -92,20 +99,23 @@ def run():
                     seen.add(lname)
 
                     if i < len(df_act):
+                        id_ = int(df_act.iloc[i]["id"])
+                        new_ids.append(id_)
                         # Update
                         conn.execute(text("UPDATE activities SET name = :name WHERE id = :id"),
-                                     {"name": name, "id": int(df_act.iloc[i]["id"])})
+                                     {"name": name, "id": id_})
                     else:
                         # Insert
-                        conn.execute(text("INSERT INTO activities (name) VALUES (:name)"), {"name": name})
+                        result = conn.execute(text("INSERT INTO activities (name) VALUES (:name) RETURNING id"), {"name": name})
+                        new_id = result.scalar()
+                        new_ids.append(new_id)
 
-                # Delete removed rows
+                # Delete removed
                 old_ids = set(df_act["id"])
-                new_ids = set(edited_df.index[:len(df_act)])
-                deleted_ids = old_ids - new_ids
+                deleted_ids = old_ids - set(new_ids)
                 for del_id in deleted_ids:
-                    conn.execute(text("DELETE FROM technician_tasks WHERE activity_id = :id"), {"id": int(df_act.iloc[del_id]["id"])})
-                    conn.execute(text("DELETE FROM activities WHERE id = :id"), {"id": int(df_act.iloc[del_id]["id"])})
+                    conn.execute(text("DELETE FROM technician_tasks WHERE activity_id = :id"), {"id": del_id})
+                    conn.execute(text("DELETE FROM activities WHERE id = :id"), {"id": del_id})
 
             if not error:
                 st.success("✅ Activities saved")
