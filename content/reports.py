@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import text
-from datetime import datetime, timedelta
+from datetime import datetime
 from db import get_engine
 from auth import is_admin
 from zoneinfo import ZoneInfo
@@ -16,24 +16,16 @@ def run():
 
     engine = get_engine()
 
-    # Указываем временную зону сервера/клиента
-    LOCAL_TIMEZONE = ZoneInfo("America/Chicago")
-    now_local = datetime.now(LOCAL_TIMEZONE)
+    LOCAL_TIMEZONE = "America/Chicago"
+    now_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE))
     today_local = now_local.date()
 
-    selected_date_local = st.date_input("Select date", value=today_local)
-    show_latest_only = st.checkbox("Show current tasks", value=True)
-
-    # Начало и конец выбранного дня в локальной зоне
-    start_local = datetime.combine(selected_date_local, datetime.min.time(), tzinfo=LOCAL_TIMEZONE)
-    end_local = start_local + timedelta(days=1)
-
-    # Преобразуем в UTC
-    start_utc = start_local.astimezone(ZoneInfo("UTC"))
-    end_utc = end_local.astimezone(ZoneInfo("UTC"))
+    selected_date = st.date_input("Select date", value=today_local)
+    show_latest_only = st.checkbox("Show current tasks only (1 per tech)", value=True)
 
     with engine.connect() as conn:
         if show_latest_only:
+            # Показываем по одной последней записи за день
             query = """
                 SELECT 
                     tech.id AS technician_id,
@@ -51,7 +43,7 @@ def run():
                         SELECT *,
                                ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) AS rn
                         FROM technician_tasks
-                        WHERE timestamp >= :start_utc AND timestamp < :end_utc
+                        WHERE DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') = :selected_date
                     ) sub
                     WHERE rn = 1
                 ) task ON task.technician_id = tech.id
@@ -61,10 +53,11 @@ def run():
                 ORDER BY tech.name
             """
         else:
+            # Показываем все задачи за день
             query = """
                 SELECT 
                     t.name AS technician,
-                    tl.name AS team_lead,
+                    COALESCE(tl.name, '—') AS team_lead,
                     l.name AS location,
                     a.name AS activity,
                     task.rack,
@@ -74,13 +67,12 @@ def run():
                 LEFT JOIN technicians tl ON task.source = tl.id
                 LEFT JOIN locations l ON task.location_id = l.id
                 LEFT JOIN activities a ON task.activity_id = a.id
-                WHERE task.timestamp >= :start_utc AND task.timestamp < :end_utc
+                WHERE DATE(task.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') = :selected_date
                 ORDER BY task.timestamp DESC
             """
 
         rows = conn.execute(text(query), {
-            "start_utc": start_utc,
-            "end_utc": end_utc
+            "selected_date": selected_date
         }).fetchall()
 
     if not rows:
@@ -89,8 +81,9 @@ def run():
 
     df = pd.DataFrame([dict(row._mapping) for row in rows])
 
+    # Преобразуем timestamp в локальное время
     if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(LOCAL_TIMEZONE)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(ZoneInfo(LOCAL_TIMEZONE))
 
     with st.expander("🔍 Filters"):
         for col in ["technician", "team_lead", "location", "activity", "rack"]:
