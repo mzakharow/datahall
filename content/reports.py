@@ -17,7 +17,7 @@ def run():
 
     engine = get_engine()
 
-    LOCAL_TIMEZONE = ZoneInfo("America/Chicago")
+    LOCAL_TIMEZONE = "America/Chicago"
     now_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE))
     today_local = now_local.date()
     selected_date = st.date_input("Select date", value=today_local)
