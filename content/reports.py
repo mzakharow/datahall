@@ -7,7 +7,7 @@ from auth import is_admin
 from zoneinfo import ZoneInfo
 
 def run():
-    LOCAL_TIMEZONE = ZoneInfo("America/Chicago")
+    
     st.title("📊 Technician Tasks Report")
 
     user = st.session_state.get("user")
@@ -17,7 +17,12 @@ def run():
 
     engine = get_engine()
 
-    selected_date = st.date_input("Select date", value=date.today())
+    LOCAL_TIMEZONE = ZoneInfo("America/Chicago")
+    now_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE))
+    today_local = now_local.date()
+    selected_date = st.date_input("Select date", value=today_local)
+
+    # selected_date = st.date_input("Select date", value=date.today())
     show_latest_only = st.checkbox("Show current tasks", value=True)
 
     with engine.connect() as conn:
