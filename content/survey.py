@@ -23,14 +23,13 @@ def run():
     email = st.text_input("Enter email", value=st.session_state.email)
     st.session_state.email = email
 
-    # Автоматическая проверка email из ссылки
     if url_email and not st.session_state.email_checked:
         user = get_user_by_email(url_email)
         if user:
             st.session_state.user_data = user
             st.session_state.email_checked = True
             st.success("Email auto-verified from link!")
-            # Загрузка последних данных
+           
             with engine.connect() as conn:
                 latest_task = conn.execute(text("""
                     SELECT location_id, activity_id, rack 
@@ -50,11 +49,12 @@ def run():
                 else:
                     st.session_state.last_location_id = None
                     st.session_state.last_activity_id = None
+                    st.success(st.session_state.last_activity_id)
+                    st.success(None)
                     st.session_state.last_rack = ""
         else:
             st.error("User not found.")
 
-    # Ручная проверка email
     if st.button("Check email"):
         with engine.connect() as conn:
             row = conn.execute(
