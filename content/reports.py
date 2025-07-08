@@ -33,7 +33,7 @@ def run():
                     loc.name AS location,
                     act.name AS activity,
                     task.rack,
-                    task.source,
+                    COALESCE(src.name, '—') AS created_by,
                     task.timestamp
                 FROM technicians tech
                 LEFT JOIN technicians tl ON tech.team_lead = tl.id
@@ -47,6 +47,7 @@ def run():
                     ) sub
                     WHERE rn = 1
                 ) task ON task.technician_id = tech.id
+                LEFT JOIN technicians src ON task.source = src.id
                 LEFT JOIN locations loc ON task.location_id = loc.id
                 LEFT JOIN activities act ON task.activity_id = act.id
                 WHERE tech.activ = true
@@ -60,7 +61,7 @@ def run():
                     l.name AS location,
                     a.name AS activity,
                     task.rack,
-                    task.source,
+                    COALESCE(tl.name, '—') AS created_by,
                     task.timestamp
                 FROM technician_tasks task
                 LEFT JOIN technicians t ON task.technician_id = t.id
