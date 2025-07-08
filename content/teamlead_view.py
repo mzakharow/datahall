@@ -13,15 +13,15 @@ def run():
         return
     team_lead_id = user["id"]
     with engine.connect() as conn:
-        # Техники в подчинении
+       
         technicians = conn.execute(text("""
             SELECT id, name FROM technicians
             WHERE team_lead = :tl_id AND activ = true
             ORDER BY name
         """), {"tl_id": team_lead_id}).fetchall()
 
-        locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
-        activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
+        locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
+        activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
 
     if not technicians:
         st.info("You don't have a team.")
@@ -32,7 +32,6 @@ def run():
     tech_options = {tech.name: tech.id for tech in technicians}
     tech_ids = [tech.id for tech in technicians]
 
-    # Получение последних записей technician_tasks за сегодня
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
@@ -51,7 +50,6 @@ def run():
         for row in rows:
             latest_tasks[row.technician_id] = dict(row._mapping)
 
-    # Формируем таблицу
     df = pd.DataFrame([{
         "Technician": tech.name,
         "Location": next((loc.name for loc in locations if loc.id == latest_tasks.get(tech.id, {}).get("location_id")), list(loc_options.keys())[0]),
