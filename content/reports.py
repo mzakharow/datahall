@@ -25,7 +25,6 @@ def run():
 
     with engine.connect() as conn:
         if show_latest_only:
-            # Показываем по одной последней записи за день
             query = """
                 SELECT 
                     tech.id AS technician_id,
@@ -34,6 +33,7 @@ def run():
                     loc.name AS location,
                     act.name AS activity,
                     task.rack,
+                    task.source,
                     task.timestamp
                 FROM technicians tech
                 LEFT JOIN technicians tl ON tech.team_lead = tl.id
@@ -53,7 +53,6 @@ def run():
                 ORDER BY tech.name
             """
         else:
-            # Показываем все задачи за день
             query = """
                 SELECT 
                     t.name AS technician,
@@ -61,6 +60,7 @@ def run():
                     l.name AS location,
                     a.name AS activity,
                     task.rack,
+                    task.source,
                     task.timestamp
                 FROM technician_tasks task
                 LEFT JOIN technicians t ON task.technician_id = t.id
@@ -81,7 +81,6 @@ def run():
 
     df = pd.DataFrame([dict(row._mapping) for row in rows])
 
-    # Преобразуем timestamp в локальное время
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(ZoneInfo(LOCAL_TIMEZONE))
 
