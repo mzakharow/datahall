@@ -71,7 +71,17 @@ def run():
 
     if st.button("💾 Save tasks"):
         with engine.begin() as conn:
-            for _, row in edited_df.iterrows():
+            # for _, row in edited_df.iterrows():
+            for idx, row in edited_df.iterrows():
+                original = df.iloc[idx]
+
+                if (
+                    row["Location"] == original["Location"] and
+                    row["Activity"] == original["Activity"] and
+                    str(row["Rack"]).strip() == str(original["Rack"]).strip()
+                ):
+                    continue
+                
                 tech_name = row["Technician"]
                 tech_id = tech_options.get(tech_name)
                 loc_id = loc_options.get(row["Location"])
