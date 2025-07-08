@@ -95,36 +95,36 @@ def run():
             locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
             activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
 
-        # loc_options = {loc.name: loc.id for loc in locations}
-        # act_options = {act.name: act.id for act in activities}
+        loc_options = {loc.name: loc.id for loc in locations}
+        act_options = {act.name: act.id for act in activities}
 
-        loc_options = {"—": None}
-        loc_options.update({loc.name: loc.id for loc in locations})
+        # loc_options = {"—": None}
+        # loc_options.update({loc.name: loc.id for loc in locations})
 
-        act_options = {"—": None}
-        act_options.update({act.name: act.id for act in activities})
+        # act_options = {"—": None}
+        # act_options.update({act.name: act.id for act in activities})
 
-        # default_loc = next((name for name, id_ in loc_options.items()
-        #                     if id_ == st.session_state.get("last_location_id")), None)
-
-        # default_act = next((name for name, id_ in act_options.items()
-        #                     if id_ == st.session_state.get("last_activity_id")), None)
         default_loc = next((name for name, id_ in loc_options.items()
-                            if id_ == st.session_state.get("last_location_id")), "—")
+                            if id_ == st.session_state.get("last_location_id")), None)
 
         default_act = next((name for name, id_ in act_options.items()
-                            if id_ == st.session_state.get("last_activity_id")), "—")
+                            if id_ == st.session_state.get("last_activity_id")), None)
+        # default_loc = next((name for name, id_ in loc_options.items()
+        #                     if id_ == st.session_state.get("last_location_id")), "—")
 
-        # selected_location = st.selectbox("Select location", list(loc_options.keys()), 
-        #     index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
+        # default_act = next((name for name, id_ in act_options.items()
+        #                     if id_ == st.session_state.get("last_activity_id")), "—")
 
-        # selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
-        #     index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
         selected_location = st.selectbox("Select location", list(loc_options.keys()), 
-            index=list(loc_options.keys()).index(default_loc))
+            index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
 
         selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
-            index=list(act_options.keys()).index(default_act))
+            index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
+        # selected_location = st.selectbox("Select location", list(loc_options.keys()), 
+        #     index=list(loc_options.keys()).index(default_loc))
+
+        # selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
+        #     index=list(act_options.keys()).index(default_act))
 
         rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
 
