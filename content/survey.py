@@ -49,8 +49,6 @@ def run():
                 else:
                     st.session_state.last_location_id = None
                     st.session_state.last_activity_id = None
-                    st.success(st.session_state.last_activity_id)
-                    st.success(None)
                     st.session_state.last_rack = ""
         else:
             st.error("User not found.")
@@ -83,11 +81,9 @@ def run():
                     st.session_state.last_location_id = latest_task.location_id
                     st.session_state.last_activity_id = latest_task.activity_id
                     st.session_state.last_rack = latest_task.rack
-                    st.success(st.session_state.last_activity_id)
                 else:
                     st.session_state.last_location_id = None
                     st.session_state.last_activity_id = None
-                    st.success(st.session_state.last_activity_id)
                     st.session_state.last_rack = ""
         else:
             st.error("Email doesn't exist")
@@ -99,20 +95,36 @@ def run():
             locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
             activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
 
-        loc_options = {loc.name: loc.id for loc in locations}
-        act_options = {act.name: act.id for act in activities}
+        # loc_options = {loc.name: loc.id for loc in locations}
+        # act_options = {act.name: act.id for act in activities}
 
+        loc_options = {"—": None}
+        loc_options.update({loc.name: loc.id for loc in locations})
+
+        act_options = {"—": None}
+        act_options.update({act.name: act.id for act in activities})
+
+        # default_loc = next((name for name, id_ in loc_options.items()
+        #                     if id_ == st.session_state.get("last_location_id")), None)
+
+        # default_act = next((name for name, id_ in act_options.items()
+        #                     if id_ == st.session_state.get("last_activity_id")), None)
         default_loc = next((name for name, id_ in loc_options.items()
-                            if id_ == st.session_state.get("last_location_id")), None)
+                            if id_ == st.session_state.get("last_location_id")), "—")
 
         default_act = next((name for name, id_ in act_options.items()
-                            if id_ == st.session_state.get("last_activity_id")), None)
+                            if id_ == st.session_state.get("last_activity_id")), "—")
 
+        # selected_location = st.selectbox("Select location", list(loc_options.keys()), 
+        #     index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
+
+        # selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
+        #     index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
         selected_location = st.selectbox("Select location", list(loc_options.keys()), 
-            index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
+            index=list(loc_options.keys()).index(default_loc))
 
         selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
-            index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
+            index=list(act_options.keys()).index(default_act))
 
         rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
 
