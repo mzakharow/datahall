@@ -83,9 +83,11 @@ def run():
                     st.session_state.last_location_id = latest_task.location_id
                     st.session_state.last_activity_id = latest_task.activity_id
                     st.session_state.last_rack = latest_task.rack
+                    st.success(st.session_state.last_activity_id)
                 else:
                     st.session_state.last_location_id = None
                     st.session_state.last_activity_id = None
+                    st.success(st.session_state.last_activity_id)
                     st.session_state.last_rack = ""
         else:
             st.error("Email doesn't exist")
