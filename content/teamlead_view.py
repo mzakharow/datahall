@@ -12,13 +12,22 @@ def run():
         st.error("Access denied")
         return
     team_lead_id = user["id"]
+    show_all = st.checkbox("👥 Show all technicians", value=False)
+    
     with engine.connect() as conn:
        
-        technicians = conn.execute(text("""
-            SELECT id, name FROM technicians
-            WHERE team_lead = :tl_id AND activ = true
-            ORDER BY name
-        """), {"tl_id": team_lead_id}).fetchall()
+        if show_all:
+            technicians = conn.execute(text("""
+                SELECT id, name FROM technicians
+                WHERE activ = true
+                ORDER BY name
+            """)).fetchall()
+        else:
+            technicians = conn.execute(text("""
+                SELECT id, name FROM technicians
+                WHERE team_lead = :tl_id AND activ = true
+                ORDER BY name
+            """), {"tl_id": team_lead_id}).fetchall()
 
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
