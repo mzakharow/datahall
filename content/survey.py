@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime, date, time
 from sqlalchemy import text
+from zoneinfo import ZoneInfo
 from db import get_engine
 from auth import get_user_by_email
 
@@ -22,6 +23,11 @@ def run():
     email = st.text_input("Enter email", value=st.session_state.email)
     st.session_state.email = email
 
+    LOCAL_TZ = ZoneInfo("America/Chicago")
+    today_local = datetime.now(LOCAL_TZ).date()
+    start = datetime.combine(today_local, time.min).astimezone(ZoneInfo("UTC"))
+    end = datetime.combine(today_local, time.max).astimezone(ZoneInfo("UTC"))
+
     if url_email and not st.session_state.email_checked:
         user = get_user_by_email(url_email)
         if user:
@@ -33,12 +39,13 @@ def run():
                     SELECT location_id, activity_id, cable_type_id, rack
                     FROM technician_tasks
                     WHERE technician_id = :tech_id
-                      AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') = :today
+                      AND timestamp >= :start AND timestamp < :end
                     ORDER BY timestamp DESC
                     LIMIT 1
                 """), {
                     "tech_id": user["id"],
-                    "today": date.today()
+                    "start": start,
+                    "end": end
                 }).first()
 
                 if row:
