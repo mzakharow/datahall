@@ -138,6 +138,8 @@ def run():
             error = False
 
             with engine.begin() as conn:
+                new_ids = []
+
                 for i, row in edited_df.iterrows():
                     name = str(row["name"]).strip()
                     if not name:
@@ -150,28 +152,30 @@ def run():
                     seen.add(lname)
 
                     if i < len(df_cable):
+                        id_ = int(df_cable.iloc[i]["id"])
+                        new_ids.append(id_)
                         # Update
                         conn.execute(text("UPDATE cable_type SET name = :name WHERE id = :id"),
-                                     {"name": name, "id": int(df_cable.iloc[i]["id"])})
+                                     {"name": name, "id": id_})
                     else:
                         # Insert
-                        conn.execute(text("INSERT INTO cable_type (name) VALUES (:name)"), {"name": name})
+                        result = conn.execute(
+                            text("INSERT INTO cable_type (name) VALUES (:name) RETURNING id"),
+                            {"name": name}
+                        )
+                        new_id = result.scalar()
+                        new_ids.append(new_id)
 
-                # Delete removed rows
+                # Delete removed cable types
                 old_ids = set(df_cable["id"])
-                new_ids = set()
-
-                for i, row in edited_df.iterrows():
-                    if i < len(df_cable):
-                        new_ids.add(int(df_cable.iloc[i]["id"]))
-
-                deleted_ids = old_ids - new_ids
+                deleted_ids = old_ids - set(new_ids)
                 for del_id in deleted_ids:
+                    conn.execute(text("DELETE FROM technician_tasks WHERE cable_type_id = :id"), {"id": del_id})
                     conn.execute(text("DELETE FROM cable_type WHERE id = :id"), {"id": del_id})
 
             if not error:
                 st.success("✅ Cable types saved")
-                 st.rerun()
+                st.rerun()
             
     # ====== Technicians ======
     st.subheader("👷 Technicians")
