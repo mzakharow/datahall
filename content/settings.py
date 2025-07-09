@@ -7,7 +7,7 @@ import re
 def run():
     st.title("⚙️ Settings")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     engine = get_engine()
 
@@ -120,7 +120,55 @@ def run():
             if not error:
                 st.success("✅ Activities saved")
                 st.rerun()
+    with col3:
+    st.subheader("🔌 Cable Types")
 
+    with engine.connect() as conn:
+        df_cable = pd.read_sql("SELECT id, name FROM cable_type ORDER BY id", conn)
+
+    edited_df = st.data_editor(
+        df_cable.copy(),
+        num_rows="dynamic",
+        use_container_width=True,
+        key="cable_editor"
+    )
+
+    if st.button("💾 Save cable types"):
+        seen = set()
+        error = False
+
+        with engine.begin() as conn:
+            for i, row in edited_df.iterrows():
+                name = str(row["name"]).strip()
+                if not name:
+                    continue
+                lname = name.lower()
+                if lname in seen:
+                    st.warning(f"Duplicate cable type: {name}")
+                    error = True
+                    continue
+                seen.add(lname)
+
+                if i < len(df_cable):
+                    # Update
+                    conn.execute(text("UPDATE cable_type SET name = :name WHERE id = :id"),
+                                 {"name": name, "id": int(df_cable.iloc[i]["id"])})
+                else:
+                    # Insert
+                    conn.execute(text("INSERT INTO cable_type (name) VALUES (:name)"), {"name": name})
+
+            # Delete removed rows
+            old_ids = set(df_cable["id"])
+            new_ids = set(edited_df.index[:len(df_cable)])
+            deleted_ids = old_ids - new_ids
+            for del_id in deleted_ids:
+                conn.execute(text("DELETE FROM cable_type WHERE id = :id"),
+                             {"id": int(df_cable.iloc[del_id]["id"])})
+
+        if not error:
+            st.success("✅ Cable types saved")
+            st.rerun()
+            
     # ====== Technicians ======
     st.subheader("👷 Technicians")
 
