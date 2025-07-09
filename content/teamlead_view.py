@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import text
-from datetime import datetime, date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from db import get_engine
+
 
 def run():
     st.title("👷 Team Lead Panel")
@@ -11,6 +13,7 @@ def run():
     if not user or not user.get("is_teamlead"):
         st.error("Access denied")
         return
+
     team_lead_id = user["id"]
     show_all = st.checkbox("👥 Show all technicians", value=False)
 
@@ -43,6 +46,9 @@ def run():
     tech_options = {tech.name: tech.id for tech in technicians}
     tech_ids = [tech.id for tech in technicians]
 
+    LOCAL_TIMEZONE = "America/Chicago"
+    today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
+
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
@@ -51,11 +57,13 @@ def run():
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
                 FROM technician_tasks
-                WHERE technician_id = ANY(:tech_ids) AND DATE(timestamp) = :today
+                WHERE technician_id = ANY(:tech_ids)
+                  AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :today
             ) sub
             WHERE rn = 1"""), {
             "tech_ids": tech_ids,
-            "today": date.today()
+            "today": today_local,
+            "tz": LOCAL_TIMEZONE
         }).fetchall()
 
         for row in rows:
