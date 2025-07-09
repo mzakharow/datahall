@@ -15,7 +15,6 @@ def run():
     show_all = st.checkbox("👥 Show all technicians", value=False)
 
     with engine.connect() as conn:
-
         if show_all:
             technicians = conn.execute(text("""
                 SELECT id, name FROM technicians
@@ -82,17 +81,16 @@ def run():
         }
     )
 
-    if st.button("📏 Save tasks"):
+    if st.button("💾 Save tasks"):
         with engine.begin() as conn:
             for idx, row in edited_df.iterrows():
                 original = df.iloc[idx]
-
                 if (
                     row["Location"] == original["Location"] and
                     row["Activity"] == original["Activity"] and
                     str(row["Rack"]).strip() == str(original["Rack"]).strip() and
-                    int(row.get("Quantity", 0)) == int(original.get("Quantity", 0)) and
-                    int(row.get("Percent", 0)) == int(original.get("Percent", 0))
+                    int(row["Quantity"]) == int(original["Quantity"]) and
+                    int(row["Percent"]) == int(original["Percent"])
                 ):
                     continue
 
@@ -101,26 +99,26 @@ def run():
                 loc_id = loc_options.get(row["Location"])
                 act_id = act_options.get(row["Activity"])
                 rack = str(row.get("Rack", "")).strip()[:5]
-                quantity = int(row.get("Quantity", 0))
-                percent = int(row.get("Percent", 0))
+                quantity = max(0, int(row.get("Quantity", 0)))
+                percent = min(100, max(0, int(row.get("Percent", 0))))
 
                 if tech_id and loc_id:
                     if not act_id:
                         act_id = None
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
-                            technician_id, location_id, activity_id, rack, quantity, percent, source, timestamp
+                            technician_id, location_id, activity_id, rack, source, timestamp, quantity, percent
                         )
-                        VALUES (:tech_id, :loc_id, :act_id, :rack, :quantity, :percent, :source, :timestamp)
+                        VALUES (:tech_id, :loc_id, :act_id, :rack, :source, :timestamp, :quantity, :percent)
                     """), {
                         "tech_id": tech_id,
                         "loc_id": loc_id,
                         "act_id": act_id,
                         "rack": rack,
-                        "quantity": quantity,
-                        "percent": percent,
                         "source": team_lead_id,
-                        "timestamp": datetime.now()
+                        "timestamp": datetime.now(),
+                        "quantity": quantity,
+                        "percent": percent
                     })
 
         st.success("✅ Changes saved!")
