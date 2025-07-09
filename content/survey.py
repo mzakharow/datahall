@@ -32,7 +32,8 @@ def run():
                 row = conn.execute(text("""
                     SELECT location_id, activity_id, cable_type_id, rack
                     FROM technician_tasks
-                    WHERE technician_id = :tech_id AND DATE(timestamp) = :today
+                    WHERE technician_id = :tech_id
+                      AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') = :today
                     ORDER BY timestamp DESC
                     LIMIT 1
                 """), {
@@ -123,3 +124,4 @@ def run():
                     })
 
                 st.success("Saved!")
+                st.rerun()
