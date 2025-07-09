@@ -159,15 +159,19 @@ def run():
 
                 # Delete removed rows
                 old_ids = set(df_cable["id"])
-                new_ids = set(edited_df.index[:len(df_cable)])
+                new_ids = set()
+
+                for i, row in edited_df.iterrows():
+                    if i < len(df_cable):
+                        new_ids.add(int(df_cable.iloc[i]["id"]))
+
                 deleted_ids = old_ids - new_ids
                 for del_id in deleted_ids:
-                    conn.execute(text("DELETE FROM cable_type WHERE id = :id"),
-                                 {"id": int(df_cable.iloc[del_id]["id"])})
+                    conn.execute(text("DELETE FROM cable_type WHERE id = :id"), {"id": del_id})
 
             if not error:
                 st.success("✅ Cable types saved")
-                st.rerun()
+                 st.rerun()
             
     # ====== Technicians ======
     st.subheader("👷 Technicians")
