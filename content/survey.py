@@ -29,7 +29,7 @@ def run():
             st.session_state.email_checked = True
 
             with engine.connect() as conn:
-                last_task = conn.execute(text("""
+                row = conn.execute(text("""
                     SELECT location_id, activity_id, cable_type_id, rack
                     FROM technician_tasks
                     WHERE technician_id = :tech_id AND DATE(timestamp) = :today
@@ -40,11 +40,12 @@ def run():
                     "today": date.today()
                 }).first()
 
-                if last_task:
-                    st.session_state.last_location_id = last_task.location_id
-                    st.session_state.last_activity_id = last_task.activity_id
-                    st.session_state.last_cable_type_id = last_task.cable_type_id
-                    st.session_state.last_rack = last_task.rack
+                if row:
+                    task = dict(row._mapping)
+                    st.session_state.last_location_id = task["location_id"]
+                    st.session_state.last_activity_id = task["activity_id"]
+                    st.session_state.last_cable_type_id = task["cable_type_id"]
+                    st.session_state.last_rack = task["rack"]
                 else:
                     st.session_state.last_location_id = None
                     st.session_state.last_activity_id = None
