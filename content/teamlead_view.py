@@ -11,11 +11,11 @@ def run():
     if not user or not user.get("is_teamlead"):
         st.error("Access denied")
         return
+
     team_lead_id = user["id"]
     show_all = st.checkbox("👥 Show all technicians", value=False)
 
     with engine.connect() as conn:
-
         if show_all:
             technicians = conn.execute(text("""
                 SELECT id, name FROM technicians
@@ -31,6 +31,7 @@ def run():
 
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
+        cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
 
     if not technicians:
         st.info("You don't have a team.")
@@ -38,82 +39,56 @@ def run():
 
     loc_options = {loc.name: loc.id for loc in locations}
     act_options = {act.name: act.id for act in activities}
-    tech_options = {tech.name: tech.id for tech in technicians}
-    tech_ids = [tech.id for tech in technicians]
+    cable_options = {ct.name: ct.id for ct in cable_types}
 
-    latest_tasks = {}
-    with engine.connect() as conn:
-        rows = conn.execute(text("""
-            SELECT technician_id, location_id, activity_id, rack
-            FROM (
-                SELECT *,
-                       ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
-                FROM technician_tasks
-                WHERE technician_id = ANY(:tech_ids) AND DATE(timestamp) = :today
-            ) sub
-            WHERE rn = 1"""), {
-            "tech_ids": tech_ids,
-            "today": date.today()
-        }).fetchall()
+    with st.form("task_form"):
+        st.subheader("📋 Assign Tasks")
+        task_entries = []
 
-        for row in rows:
-            latest_tasks[row.technician_id] = dict(row._mapping)
+        for tech in technicians:
+            st.markdown(f"### 👷 {tech.name}")
+            loc = st.selectbox(f"📍 Location", list(loc_options.keys()), key=f"loc_{tech.id}")
+            acts = st.multiselect(f"⚙️ Activities", list(act_options.keys()), key=f"acts_{tech.id}")
+            cables = st.multiselect(f"🔌 Cable Types", list(cable_options.keys()), key=f"cables_{tech.id}")
+            rack = st.text_input("Rack", key=f"rack_{tech.id}").strip()[:5]
 
-    df = pd.DataFrame([{
-        "Technician": tech.name,
-        "Location": next((loc.name for loc in locations if loc.id == latest_tasks.get(tech.id, {}).get("location_id")), list(loc_options.keys())[0]),
-        "Activities": [next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0])],
-        "Rack": latest_tasks.get(tech.id, {}).get("rack", "")
-    } for tech in technicians])
+            task_entries.append({
+                "technician_id": tech.id,
+                "location": loc,
+                "activities": acts,
+                "cables": cables,
+                "rack": rack
+            })
 
-    edited_df = st.data_editor(
-        df,
-        num_rows="fixed",
-        use_container_width=True,
-        key="assignments_editor",
-        column_config={
-            "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
-            "Activities": st.column_config.MultiSelectColumn("Activities", options=list(act_options.keys())),
-            "Rack": st.column_config.TextColumn("Rack", max_chars=5)
-        }
-    )
+        submitted = st.form_submit_button("💾 Save tasks")
 
-    if st.button("📅 Save tasks"):
+    if submitted:
+        now = datetime.now()
         with engine.begin() as conn:
-            for idx, row in edited_df.iterrows():
-                original = df.iloc[idx]
+            for entry in task_entries:
+                tech_id = entry["technician_id"]
+                loc_id = loc_options.get(entry["location"])
+                rack = entry["rack"]
 
-                if (
-                    row["Location"] == original["Location"] and
-                    set(row["Activities"]) == set(original["Activities"]) and
-                    str(row["Rack"]).strip() == str(original["Rack"]).strip()
-                ):
-                    continue
-
-                tech_name = row["Technician"]
-                tech_id = tech_options.get(tech_name)
-                loc_id = loc_options.get(row["Location"])
-                rack = str(row.get("Rack", "")).strip()[:5]
-
-                now = datetime.now()
-
-                for act_name in row["Activities"]:
+                for act_name in entry["activities"]:
                     act_id = act_options.get(act_name)
-
-                    if tech_id and loc_id and act_id:
+                    for cable_name in entry["cables"]:
+                        cable_id = cable_options.get(cable_name)
                         conn.execute(text("""
                             INSERT INTO technician_tasks (
-                                technician_id, location_id, activity_id, rack, source, timestamp
+                                technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
+                            ) VALUES (
+                                :tech_id, :loc_id, :act_id, :cable_id, :rack, :source, :timestamp
                             )
-                            VALUES (:tech_id, :loc_id, :act_id, :rack, :source, :timestamp)
                         """), {
                             "tech_id": tech_id,
                             "loc_id": loc_id,
                             "act_id": act_id,
+                            "cable_id": cable_id,
                             "rack": rack,
                             "source": team_lead_id,
                             "timestamp": now
                         })
 
-        st.success("✅ Changes saved!")
+        st.success("✅ Tasks saved!")
         st.rerun()
