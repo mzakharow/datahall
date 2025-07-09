@@ -7,7 +7,7 @@ from db import get_engine
 from auth import get_user_by_email
 
 def run():
-    st.title("\ud83d\udccb Survey")
+    st.title("📋 Survey")
 
     engine = get_engine()
     query_params = st.query_params
@@ -28,37 +28,39 @@ def run():
     start = datetime.combine(today_local, time.min).astimezone(ZoneInfo("UTC"))
     end = datetime.combine(today_local, time.max).astimezone(ZoneInfo("UTC"))
 
+    def load_last_task(user_id):
+        with engine.connect() as conn:
+            row = conn.execute(text("""
+                SELECT location_id, activity_id, cable_type_id, rack
+                FROM technician_tasks
+                WHERE technician_id = :tech_id
+                  AND timestamp >= :start AND timestamp < :end
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """), {
+                "tech_id": user_id,
+                "start": start,
+                "end": end
+            }).first()
+
+        if row:
+            task = dict(row._mapping)
+            st.session_state.last_location_id = task["location_id"]
+            st.session_state.last_activity_id = task["activity_id"]
+            st.session_state.last_cable_type_id = task["cable_type_id"]
+            st.session_state.last_rack = task["rack"]
+        else:
+            st.session_state.last_location_id = None
+            st.session_state.last_activity_id = None
+            st.session_state.last_cable_type_id = None
+            st.session_state.last_rack = ""
+
     if url_email and not st.session_state.email_checked:
         user = get_user_by_email(url_email)
         if user:
             st.session_state.user_data = user
             st.session_state.email_checked = True
-
-            with engine.connect() as conn:
-                row = conn.execute(text("""
-                    SELECT location_id, activity_id, cable_type_id, rack
-                    FROM technician_tasks
-                    WHERE technician_id = :tech_id
-                      AND timestamp >= :start AND timestamp < :end
-                    ORDER BY timestamp DESC
-                    LIMIT 1
-                """), {
-                    "tech_id": user["id"],
-                    "start": start,
-                    "end": end
-                }).first()
-
-                if row:
-                    task = dict(row._mapping)
-                    st.session_state.last_location_id = task["location_id"]
-                    st.session_state.last_activity_id = task["activity_id"]
-                    st.session_state.last_cable_type_id = task["cable_type_id"]
-                    st.session_state.last_rack = task["rack"]
-                else:
-                    st.session_state.last_location_id = None
-                    st.session_state.last_activity_id = None
-                    st.session_state.last_cable_type_id = None
-                    st.session_state.last_rack = ""
+            load_last_task(user["id"])
         else:
             st.error("User not found.")
 
@@ -69,39 +71,13 @@ def run():
                 {"email": email.lower()}
             ).first()
 
-            if row:
-                st.session_state.email_checked = True
-                st.session_state.user_data = dict(row._mapping)
-                user = st.session_state.user_data
-
-                task_row = conn.execute(text("""
-                    SELECT location_id, activity_id, cable_type_id, rack
-                    FROM technician_tasks
-                    WHERE technician_id = :tech_id
-                      AND timestamp >= :start AND timestamp < :end
-                    ORDER BY timestamp DESC
-                    LIMIT 1
-                """), {
-                    "tech_id": user["id"],
-                    "start": start,
-                    "end": end
-                }).first()
-
-                if task_row:
-                    task = dict(task_row._mapping)
-                    st.session_state.last_location_id = task["location_id"]
-                    st.session_state.last_activity_id = task["activity_id"]
-                    st.session_state.last_cable_type_id = task["cable_type_id"]
-                    st.session_state.last_rack = task["rack"]
-                else:
-                    st.session_state.last_location_id = None
-                    st.session_state.last_activity_id = None
-                    st.session_state.last_cable_type_id = None
-                    st.session_state.last_rack = ""
-
-                st.success("Email verified!")
-            else:
-                st.error("User not found.")
+        if row:
+            st.session_state.email_checked = True
+            st.session_state.user_data = dict(row._mapping)
+            load_last_task(row.id)
+            st.success("Email verified!")
+        else:
+            st.error("User not found.")
 
     if st.session_state.email_checked:
         user = st.session_state.user_data
@@ -139,7 +115,7 @@ def run():
             current_email = st.session_state.email.strip().lower()
 
             if current_email != confirmed_email:
-                st.error("\u26a0\ufe0f Email doesn't match the verified one. Please use the confirmed email.")
+                st.error("⚠️ Email doesn't match the verified one. Please use the confirmed email.")
             else:
                 now = datetime.now()
 
