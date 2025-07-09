@@ -29,29 +29,26 @@ def run():
             st.session_state.email_checked = True
 
             with engine.connect() as conn:
-                last_tasks = conn.execute(text("""
-                    SELECT location_id, rack,
-                           array_agg(DISTINCT activity_id) AS activity_ids,
-                           array_agg(DISTINCT cable_type_id) AS cable_type_ids
+                last_task = conn.execute(text("""
+                    SELECT location_id, activity_id, cable_type_id, rack
                     FROM technician_tasks
                     WHERE technician_id = :tech_id AND DATE(timestamp) = :today
-                    GROUP BY location_id, rack
-                    ORDER BY MAX(timestamp) DESC
+                    ORDER BY timestamp DESC
                     LIMIT 1
                 """), {
                     "tech_id": user["id"],
                     "today": date.today()
                 }).first()
 
-                if last_tasks:
-                    st.session_state.last_location_id = last_tasks.location_id
-                    st.session_state.last_activity_ids = last_tasks.activity_ids or []
-                    st.session_state.last_cable_type_ids = last_tasks.cable_type_ids or []
-                    st.session_state.last_rack = last_tasks.rack
+                if last_task:
+                    st.session_state.last_location_id = last_task.location_id
+                    st.session_state.last_activity_id = last_task.activity_id
+                    st.session_state.last_cable_type_id = last_task.cable_type_id
+                    st.session_state.last_rack = last_task.rack
                 else:
                     st.session_state.last_location_id = None
-                    st.session_state.last_activity_ids = []
-                    st.session_state.last_cable_type_ids = []
+                    st.session_state.last_activity_id = None
+                    st.session_state.last_cable_type_id = None
                     st.session_state.last_rack = ""
         else:
             st.error("User not found.")
@@ -85,14 +82,17 @@ def run():
 
         default_loc = next((name for name, id_ in loc_options.items()
                             if id_ == st.session_state.get("last_location_id")), None)
-        default_acts = [act_id_to_name.get(i) for i in st.session_state.get("last_activity_ids", []) if i in act_id_to_name]
-        default_cables = [cable_id_to_name.get(i) for i in st.session_state.get("last_cable_type_ids", []) if i in cable_id_to_name]
+        default_act = act_id_to_name.get(st.session_state.get("last_activity_id"))
+        default_cable = cable_id_to_name.get(st.session_state.get("last_cable_type_id"))
 
-        selected_location = st.selectbox("Select location", list(loc_options.keys()), 
+        selected_location = st.selectbox("Select location", list(loc_options.keys()),
             index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
 
-        selected_activities = st.multiselect("Select activities", list(act_options.keys()), default=default_acts)
-        selected_cable = st.selectbox("Select cable type", list(cable_options.keys()))
+        selected_activity = st.selectbox("Select activity", list(act_options.keys()),
+            index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
+
+        selected_cable = st.selectbox("Select cable type", list(cable_options.keys()),
+            index=list(cable_options.keys()).index(default_cable) if default_cable in cable_options else 0)
 
         rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
 
