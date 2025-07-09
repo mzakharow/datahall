@@ -28,8 +28,8 @@ def run():
         if user:
             st.session_state.user_data = user
             st.session_state.email_checked = True
-            st.success("Email auto-verified from link!")
-           
+            # st.success("Email auto-verified from link!")
+
             with engine.connect() as conn:
                 latest_task = conn.execute(text("""
                     SELECT location_id, activity_id, rack 
@@ -94,37 +94,25 @@ def run():
         with engine.connect() as conn:
             locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
             activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
+            cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name")).fetchall()
 
         loc_options = {loc.name: loc.id for loc in locations}
         act_options = {act.name: act.id for act in activities}
-
-        # loc_options = {"—": None}
-        # loc_options.update({loc.name: loc.id for loc in locations})
-
-        # act_options = {"—": None}
-        # act_options.update({act.name: act.id for act in activities})
+        cable_options = {ct.name: ct.id for ct in cable_types}
 
         default_loc = next((name for name, id_ in loc_options.items()
                             if id_ == st.session_state.get("last_location_id")), None)
 
         default_act = next((name for name, id_ in act_options.items()
                             if id_ == st.session_state.get("last_activity_id")), None)
-        # default_loc = next((name for name, id_ in loc_options.items()
-        #                     if id_ == st.session_state.get("last_location_id")), "—")
-
-        # default_act = next((name for name, id_ in act_options.items()
-        #                     if id_ == st.session_state.get("last_activity_id")), "—")
 
         selected_location = st.selectbox("Select location", list(loc_options.keys()), 
             index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
 
         selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
             index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
-        # selected_location = st.selectbox("Select location", list(loc_options.keys()), 
-        #     index=list(loc_options.keys()).index(default_loc))
 
-        # selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
-        #     index=list(act_options.keys()).index(default_act))
+        selected_cables = st.multiselect("Select cable types", list(cable_options.keys()))
 
         rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
 
@@ -135,20 +123,23 @@ def run():
             if current_email != confirmed_email:
                 st.error("⚠️ Email doesn't match the verified one. Please use the confirmed email.")
             else:
-                response = {
-                    "email": confirmed_email,
-                    "technician_id": user["id"],
-                    "location_id": loc_options[selected_location],
-                    "activity_id": act_options[selected_activity],
-                    "rack": rack_input,
-                    "timestamp": datetime.now()
-                }
+                now = datetime.now()
 
                 with engine.begin() as conn:
-                    conn.execute(text("""
-                        INSERT INTO technician_tasks (technician_id, location_id, activity_id, rack, source, timestamp)
-                        VALUES (:technician_id, :location_id, :activity_id, :rack, :technician_id, :timestamp)
-                    """), response)
+                    for cable_name in selected_cables:
+                        conn.execute(text("""
+                            INSERT INTO technician_tasks (
+                                technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
+                            )
+                            VALUES (:technician_id, :location_id, :activity_id, :cable_type_id, :rack, :source, :timestamp)
+                        """), {
+                            "technician_id": user["id"],
+                            "location_id": loc_options[selected_location],
+                            "activity_id": act_options[selected_activity],
+                            "cable_type_id": cable_options[cable_name],
+                            "rack": rack_input,
+                            "source": user["id"],
+                            "timestamp": now
+                        })
 
                 st.success("Saved!")
-                st.json(response)
