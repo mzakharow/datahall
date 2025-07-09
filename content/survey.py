@@ -30,10 +30,12 @@ def run():
 
             with engine.connect() as conn:
                 last_tasks = conn.execute(text("""
-                    SELECT location_id, activity_id, rack, GROUP_CONCAT(cable_type_id) as cable_type_ids
+                    SELECT location_id, rack,
+                           array_agg(DISTINCT activity_id) AS activity_ids,
+                           array_agg(DISTINCT cable_type_id) AS cable_type_ids
                     FROM technician_tasks
                     WHERE technician_id = :tech_id AND DATE(timestamp) = :today
-                    GROUP BY location_id, activity_id, rack
+                    GROUP BY location_id, rack
                     ORDER BY MAX(timestamp) DESC
                     LIMIT 1
                 """), {
@@ -43,17 +45,14 @@ def run():
 
                 if last_tasks:
                     st.session_state.last_location_id = last_tasks.location_id
-                    st.session_state.last_activity_id = last_tasks.activity_id
+                    st.session_state.last_activity_ids = last_tasks.activity_ids or []
+                    st.session_state.last_cable_type_ids = last_tasks.cable_type_ids or []
                     st.session_state.last_rack = last_tasks.rack
-                    st.session_state.last_cable_type_ids = (
-                        [int(x) for x in last_tasks.cable_type_ids.split(",")] if last_tasks.cable_type_ids else []
-                    )
                 else:
                     st.session_state.last_location_id = None
-                    st.session_state.last_activity_id = None
-                    st.session_state.last_rack = ""
+                    st.session_state.last_activity_ids = []
                     st.session_state.last_cable_type_ids = []
-
+                    st.session_state.last_rack = ""
         else:
             st.error("User not found.")
 
@@ -80,21 +79,19 @@ def run():
         loc_options = {loc.name: loc.id for loc in locations}
         act_options = {act.name: act.id for act in activities}
         cable_options = {ct.name: ct.id for ct in cable_types}
-        cable_id_to_name = {ct.id: ct.name for ct in cable_types}
+
+        act_id_to_name = {v: k for k, v in act_options.items()}
+        cable_id_to_name = {v: k for k, v in cable_options.items()}
 
         default_loc = next((name for name, id_ in loc_options.items()
                             if id_ == st.session_state.get("last_location_id")), None)
-        default_act = next((name for name, id_ in act_options.items()
-                            if id_ == st.session_state.get("last_activity_id")), None)
-        default_cables = [cable_id_to_name.get(cid) for cid in st.session_state.get("last_cable_type_ids", [])]
-        default_cables = [c for c in default_cables if c]  # remove None
+        default_acts = [act_id_to_name.get(i) for i in st.session_state.get("last_activity_ids", []) if i in act_id_to_name]
+        default_cables = [cable_id_to_name.get(i) for i in st.session_state.get("last_cable_type_ids", []) if i in cable_id_to_name]
 
         selected_location = st.selectbox("Select location", list(loc_options.keys()), 
             index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
 
-        selected_activity = st.selectbox("Select activity", list(act_options.keys()), 
-            index=list(act_options.keys()).index(default_act) if default_act in act_options else 0)
-
+        selected_activities = st.multiselect("Select activities", list(act_options.keys()), default=default_acts)
         selected_cables = st.multiselect("Select cable types", list(cable_options.keys()), default=default_cables)
 
         rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
@@ -105,25 +102,27 @@ def run():
 
             if current_email != confirmed_email:
                 st.error("⚠️ Email doesn't match the verified one.")
+            elif not selected_activities or not selected_cables:
+                st.warning("Please select at least one activity and one cable type.")
             else:
                 now = datetime.now()
-
                 with engine.begin() as conn:
-                    for cable_name in selected_cables:
-                        conn.execute(text("""
-                            INSERT INTO technician_tasks (
-                                technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
-                            ) VALUES (
-                                :technician_id, :location_id, :activity_id, :cable_type_id, :rack, :source, :timestamp
-                            )
-                        """), {
-                            "technician_id": user["id"],
-                            "location_id": loc_options[selected_location],
-                            "activity_id": act_options[selected_activity],
-                            "cable_type_id": cable_options[cable_name],
-                            "rack": rack_input,
-                            "source": user["id"],
-                            "timestamp": now
-                        })
+                    for act_name in selected_activities:
+                        for cable_name in selected_cables:
+                            conn.execute(text("""
+                                INSERT INTO technician_tasks (
+                                    technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
+                                ) VALUES (
+                                    :technician_id, :location_id, :activity_id, :cable_type_id, :rack, :source, :timestamp
+                                )
+                            """), {
+                                "technician_id": user["id"],
+                                "location_id": loc_options[selected_location],
+                                "activity_id": act_options[act_name],
+                                "cable_type_id": cable_options[cable_name],
+                                "rack": rack_input,
+                                "source": user["id"],
+                                "timestamp": now
+                            })
 
                 st.success("Saved!")
