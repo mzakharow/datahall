@@ -92,7 +92,7 @@ def run():
             index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
 
         selected_activities = st.multiselect("Select activities", list(act_options.keys()), default=default_acts)
-        selected_cables = st.multiselect("Select cable types", list(cable_options.keys()), default=default_cables)
+        selected_cable = st.selectbox("Select cable type", list(cable_options.keys()))
 
         rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
 
@@ -101,28 +101,24 @@ def run():
             current_email = st.session_state.email.strip().lower()
 
             if current_email != confirmed_email:
-                st.error("⚠️ Email doesn't match the verified one.")
-            elif not selected_activities or not selected_cables:
-                st.warning("Please select at least one activity and one cable type.")
+                st.error("⚠️ Email doesn't match the verified one. Please use the confirmed email.")
             else:
                 now = datetime.now()
+
                 with engine.begin() as conn:
-                    for act_name in selected_activities:
-                        for cable_name in selected_cables:
-                            conn.execute(text("""
-                                INSERT INTO technician_tasks (
-                                    technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
-                                ) VALUES (
-                                    :technician_id, :location_id, :activity_id, :cable_type_id, :rack, :source, :timestamp
-                                )
-                            """), {
-                                "technician_id": user["id"],
-                                "location_id": loc_options[selected_location],
-                                "activity_id": act_options[act_name],
-                                "cable_type_id": cable_options[cable_name],
-                                "rack": rack_input,
-                                "source": user["id"],
-                                "timestamp": now
-                            })
+                    conn.execute(text("""
+                        INSERT INTO technician_tasks (
+                            technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
+                        )
+                        VALUES (:technician_id, :location_id, :activity_id, :cable_type_id, :rack, :source, :timestamp)
+                    """), {
+                        "technician_id": user["id"],
+                        "location_id": loc_options[selected_location],
+                        "activity_id": act_options[selected_activity],
+                        "cable_type_id": cable_options[selected_cable],
+                        "rack": rack_input,
+                        "source": user["id"],
+                        "timestamp": now
+                    })
 
                 st.success("Saved!")
