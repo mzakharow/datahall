@@ -13,9 +13,9 @@ def run():
         return
     team_lead_id = user["id"]
     show_all = st.checkbox("👥 Show all technicians", value=False)
-    
+
     with engine.connect() as conn:
-       
+
         if show_all:
             technicians = conn.execute(text("""
                 SELECT id, name FROM technicians
@@ -44,7 +44,7 @@ def run():
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT technician_id, location_id, activity_id, rack
+            SELECT technician_id, location_id, activity_id, rack, quantity, percent
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
@@ -63,7 +63,9 @@ def run():
         "Technician": tech.name,
         "Location": next((loc.name for loc in locations if loc.id == latest_tasks.get(tech.id, {}).get("location_id")), list(loc_options.keys())[0]),
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
-        "Rack": latest_tasks.get(tech.id, {}).get("rack", "")
+        "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
+        "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
+        "Percent": latest_tasks.get(tech.id, {}).get("percent", 0)
     } for tech in technicians])
 
     edited_df = st.data_editor(
@@ -74,42 +76,49 @@ def run():
         column_config={
             "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
             "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
-            "Rack": st.column_config.TextColumn("Rack", max_chars=5)
+            "Rack": st.column_config.TextColumn("Rack", max_chars=5),
+            "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1),
+            "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1)
         }
     )
 
-    if st.button("💾 Save tasks"):
+    if st.button("📏 Save tasks"):
         with engine.begin() as conn:
-            # for _, row in edited_df.iterrows():
             for idx, row in edited_df.iterrows():
                 original = df.iloc[idx]
 
                 if (
                     row["Location"] == original["Location"] and
                     row["Activity"] == original["Activity"] and
-                    str(row["Rack"]).strip() == str(original["Rack"]).strip()
+                    str(row["Rack"]).strip() == str(original["Rack"]).strip() and
+                    int(row.get("Quantity", 0)) == int(original.get("Quantity", 0)) and
+                    int(row.get("Percent", 0)) == int(original.get("Percent", 0))
                 ):
                     continue
-                
+
                 tech_name = row["Technician"]
                 tech_id = tech_options.get(tech_name)
                 loc_id = loc_options.get(row["Location"])
                 act_id = act_options.get(row["Activity"])
                 rack = str(row.get("Rack", "")).strip()[:5]
+                quantity = int(row.get("Quantity", 0))
+                percent = int(row.get("Percent", 0))
 
                 if tech_id and loc_id:
                     if not act_id:
                         act_id = None
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
-                            technician_id, location_id, activity_id, rack, source, timestamp
+                            technician_id, location_id, activity_id, rack, quantity, percent, source, timestamp
                         )
-                        VALUES (:tech_id, :loc_id, :act_id, :rack, :source, :timestamp)
+                        VALUES (:tech_id, :loc_id, :act_id, :rack, :quantity, :percent, :source, :timestamp)
                     """), {
                         "tech_id": tech_id,
                         "loc_id": loc_id,
                         "act_id": act_id,
                         "rack": rack,
+                        "quantity": quantity,
+                        "percent": percent,
                         "source": team_lead_id,
                         "timestamp": datetime.now()
                     })
