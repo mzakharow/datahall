@@ -193,10 +193,10 @@ def run():
 
     team_lead_names = list(team_leads.values())
     team_lead_names.insert(0, "—")
-    df_tech["encoded_email"] = encode_email(df_tech["email"])
+    # df_tech["encoded_email"] = encode_email(df_tech["email"])
 
     edited = st.data_editor(
-        tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "admin", "encoded_email", "del"]],
+        tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "admin", "del"]],
         num_rows="dynamic",
         use_container_width=True,
         key="technicians_editor",
@@ -208,7 +208,7 @@ def run():
             ),
             "is_teamlead": st.column_config.CheckboxColumn("is teamlead"),
             "activ": st.column_config.CheckboxColumn("active"),
-            "encoded_email": st.column_config.TextColumn("Encoded Email", disabled=True),
+            # "encoded_email": st.column_config.TextColumn("Encoded Email", disabled=True),
             "del": st.column_config.CheckboxColumn("del")
         }
     )
