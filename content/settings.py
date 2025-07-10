@@ -193,7 +193,7 @@ def run():
 
     team_lead_names = list(team_leads.values())
     team_lead_names.insert(0, "—")
-    df["encoded_email"] = encode_email(df["email"])
+    df["encoded_email"] = encode_email(df_tech["email"])
 
     edited = st.data_editor(
         tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "admin", "encoded_email", "del"]],
