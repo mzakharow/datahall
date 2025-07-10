@@ -4,14 +4,15 @@ from datetime import datetime, date, time
 from sqlalchemy import text
 from zoneinfo import ZoneInfo
 from db import get_engine
-from auth import get_user_by_email
+from auth import get_user_by_email, encode_email, decode_email
 
 def run():
     st.title("📋 Survey")
 
     engine = get_engine()
     query_params = st.query_params
-    url_email = query_params.get("email", "").lower()
+    # url_email = query_params.get("email", "").lower()
+    url_email = decode_email(query_params.get("email", "").lower())
 
     if "email_checked" not in st.session_state:
         st.session_state.email_checked = False
