@@ -1,6 +1,7 @@
 import bcrypt
 from sqlalchemy import create_engine, text
 import streamlit as st
+import base64
 from db import get_engine
 
 db = st.secrets["database"]
@@ -43,3 +44,9 @@ def is_team_lead(user: dict) -> bool:
 
 def is_admin(user: dict) -> bool:
     return user.get("admin", False)
+
+def decode_email(encoded: str) -> str:
+    return base64.urlsafe_b64decode(encoded.encode()).decode()
+
+def encode_email(email: str) -> str:
+    return base64.urlsafe_b64encode(email.encode()).decode()
