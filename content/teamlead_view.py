@@ -106,8 +106,10 @@ def run():
                     row["Activity"] == original["Activity"] and
                     row["Cable Type"] == original["Cable Type"] and
                     str(row["Rack"]).strip() == str(original["Rack"]).strip() and
-                    int(row["Quantity"]) == int(original["Quantity"]) and
-                    int(row["Percent"]) == int(original["Percent"])
+                    # int(row["Quantity"]) == int(original["Quantity"]) and
+                    # int(row["Percent"]) == int(original["Percent"])
+                    int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0)
+                    int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
                 ):
                     continue
 
