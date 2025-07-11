@@ -81,25 +81,28 @@ def run():
         "Time": latest_tasks.get(tech.id, {}).get("timestamp", "").astimezone(ZoneInfo(LOCAL_TIMEZONE)).strftime("%H:%M") if latest_tasks.get(tech.id, {}).get("timestamp") else ""
     } for i, tech in enumerate(technicians)])
 
-    edited_df = st.data_editor(
-        df,
-        num_rows="fixed",
-        use_container_width=True,
-        hide_index=True,
-        key="assignments_editor",
-        column_config={
-            "#": st.column_config.NumberColumn("#", disabled=True),
-            "Time": st.column_config.TextColumn("Time", disabled=True),
-            "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
-            "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
-            "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
-            "Rack": st.column_config.TextColumn("Rack", max_chars=5),
-            "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
-            "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
-        }
-    )
+    with st.form("edit_tasks_form"):
+        edited_df = st.data_editor(
+            df,
+            num_rows="fixed",
+            use_container_width=True,
+            hide_index=True,
+            key="assignments_editor",
+            column_config={
+                "#": st.column_config.NumberColumn("#", disabled=True),
+                "Time": st.column_config.TextColumn("Time", disabled=True),
+                "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
+                "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
+                "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
+                "Rack": st.column_config.TextColumn("Rack", max_chars=5),
+                "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
+                "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
+            }
+        )
+        submitted = st.form_submit_button("📂 Save tasks")
 
-    if st.button("📂 Save tasks"):
+    # if st.button("📂 Save tasks"):
+    if submitted:
         with engine.begin() as conn:
             for idx, row in edited_df.iterrows():
                 original = df.iloc[idx]
