@@ -16,43 +16,42 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Survey", page_icon="✅", layout="wide", initial_sidebar_state="expanded")
 
-# ========== UI cleanup ==========
-hide_streamlit_style = """
+# === Скрытие UI ===
+st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# ========== Token check from URL ==========
+# === Получение токена из ссылки ===
 query_params = st.query_params
 token = query_params.get("token", "")
 
-if "user" in st.session_state and not token:
-    del st.session_state.user
-
-if "show_login" not in st.session_state:
-    st.session_state.show_login = False
-if "show_register" not in st.session_state:
-    st.session_state.show_register = False
-if "user" not in st.session_state:
-    st.session_state.user = None
-
-if token and not st.session_state.user:
+# Если токен в ссылке есть и пользователь не авторизован
+if token and not st.session_state.get("user"):
     user = get_user_by_token(token)
     if user:
         st.session_state.user = user
 
+# Очистка user если токен не передан
+if not token and "user" in st.session_state:
+    del st.session_state.user
+
+# Инициализация состояний
+st.session_state.setdefault("show_login", False)
+st.session_state.setdefault("show_register", False)
+st.session_state.setdefault("user", None)
+
 user = st.session_state.user
 
-# ========== Without authorization ==========
+# ========== Без авторизации ==========
 if not user:
     survey.run()
 
     col_space, col_buttons = st.columns([10, 2])
     with col_buttons:
-        col_login, col_register = st.columns([1, 1])
+        col_login, col_register = st.columns(2)
         with col_login:
             if st.button("🔐 Login"):
                 st.session_state.show_login = not st.session_state.show_login
@@ -62,7 +61,7 @@ if not user:
                 st.session_state.show_register = not st.session_state.show_register
                 st.session_state.show_login = False
 
-    # ==== Login form ====
+    # === Форма входа ===
     if st.session_state.show_login:
         st.subheader("🔐 Login")
         login_email = st.text_input("Email", key="login_email")
@@ -71,17 +70,16 @@ if not user:
         if st.button("Login now"):
             user = get_user_by_email(login_email)
             if user and check_password(login_password, user["password"]):
-                st.session_state.user = user
                 token = generate_token(user["email"])
                 expires_at = datetime.utcnow() + timedelta(days=1)
                 save_token(token, user["id"], expires_at)
-                st.query_params = {"token": token}
-                st.success("Logged in successfully!")
-                st.rerun()
+                redirect_url = f"?token={token}"
+                st.markdown(f"<meta http-equiv='refresh' content='0; url={redirect_url}'>", unsafe_allow_html=True)
+                st.stop()
             else:
                 st.error("Invalid credentials")
 
-    # ==== Registration form ====
+    # === Форма регистрации ===
     if st.session_state.show_register:
         st.subheader("📝 Register")
         reg_name = st.text_input("Name", key="reg_name")
@@ -91,28 +89,25 @@ if not user:
         if st.button("Create account"):
             success = register_user(reg_name, reg_email, reg_password)
             if success:
-               
                 user = get_user_by_email(reg_email)
                 if user:
-                    st.session_state.user = user
                     token = generate_token(user["email"])
                     expires_at = datetime.utcnow() + timedelta(days=1)
                     save_token(token, user["id"], expires_at)
-                    st.query_params = {"token": token}
-                    st.success("Registered and logged in!")
-                    st.rerun()
+                    redirect_url = f"?token={token}"
+                    st.markdown(f"<meta http-equiv='refresh' content='0; url={redirect_url}'>", unsafe_allow_html=True)
+                    st.stop()
             else:
                 st.error("User with this email already exists.")
 
-# ========== After login ==========
+# ========== После входа ==========
 else:
     st.sidebar.title("📋 Menu")
     options = ["Survey"]
     if is_team_lead(user):
         options.append("Team Lead")
     if is_admin(user):
-        options.append("Settings")
-        options.append("Reports")
+        options.extend(["Settings", "Reports"])
     options.append("Logout")
 
     page = st.sidebar.radio("Navigation", options)
@@ -128,5 +123,5 @@ else:
     elif page == "Logout":
         delete_user_tokens(user["id"])
         st.session_state.clear()
-        st.success("Logged out. Session cleared.")
+        st.success("Logged out.")
         st.rerun()
