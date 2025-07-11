@@ -1,9 +1,19 @@
 import streamlit as st
 from content import survey, teamlead_view, settings, reports
-from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password, generate_token, get_user_by_token, save_token, delete_user_tokens
+from auth import (
+    get_user_by_email, register_user, is_team_lead, is_admin,
+    hash_password, check_password,
+    generate_token, get_user_by_token, save_token, delete_user_tokens
+)
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Survey",  page_icon="✅", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="Survey",
+    page_icon="✅",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -12,6 +22,7 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+# Session defaults
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 if "show_register" not in st.session_state:
@@ -19,6 +30,7 @@ if "show_register" not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 
+# --- Token check from query string
 query_params = st.query_params
 token = query_params.get("token", "")
 if token and not st.session_state.user:
@@ -32,19 +44,7 @@ user = st.session_state.user
 if not user:
     survey.run()
 
-    col1, col2 = st.columns(2)
-
-    # with col1:
-    #     if st.button("🔐 Login"):
-    #         st.session_state.show_login = not st.session_state.show_login
-    #         st.session_state.show_register = False
-
-    # with col2:
-    #     if st.button("📝 Register"):
-    #         st.session_state.show_register = not st.session_state.show_register
-    #         st.session_state.show_login = False
-
-    col_space, col_buttons = st.columns([10, 2])  # подогнать ширину под нужды
+    col_space, col_buttons = st.columns([10, 2])
     with col_buttons:
         col_login, col_register = st.columns([1, 1])
         with col_login:
@@ -55,20 +55,15 @@ if not user:
             if st.button("📝 Register"):
                 st.session_state.show_register = not st.session_state.show_register
                 st.session_state.show_login = False
-            
+
     # ==== Login form ====
     if st.session_state.show_login:
         st.subheader("🔐 Login")
         login_email = st.text_input("Email", key="login_email")
         login_password = st.text_input("Password", type="password", key="login_password")
-        hashed_pw = hash_password(login_password)
-        #st.success(hashed_pw)
-        #st.success(login_password)
-        # st.success(user["password"])
-        # hash_password(password)
+
         if st.button("Login now"):
             user = get_user_by_email(login_email)
-            # if user and user["password"] == login_password: 
             if user and check_password(login_password, user["password"]):
                 st.session_state.user = user
                 token = generate_token(user["email"])
@@ -117,12 +112,11 @@ else:
     elif page == "Settings":
         settings.run()
     elif page == "Reports":
-        reports.run()    
+        reports.run()
     elif page == "Logout":
         user_id = st.session_state.user["id"]
         delete_user_tokens(user_id)
 
-        st.session_state.clear()  # сбрасывает все, включая user, токены и флаги
+        st.session_state.clear()
         st.success("Logged out. Session cleared.")
         st.rerun()
-        
