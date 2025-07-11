@@ -3,6 +3,7 @@ import pandas as pd
 from sqlalchemy import text
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import math
 from db import get_engine
 
 
@@ -114,8 +115,17 @@ def run():
                 act_id = act_options.get(row["Activity"])
                 cable_id = cable_options.get(row["Cable Type"])
                 rack = str(row.get("Rack", "")).strip()[:5]
-                quantity = max(0, int(row.get("Quantity", 0)))
-                percent = min(100, max(0, int(row.get("Percent", 0))))
+                
+                # quantity = max(0, int(row.get("Quantity", 0)))
+                # percent = min(100, max(0, int(row.get("Percent", 0))))
+                quantity_val = row.get("Quantity", 0)
+                percent_val = row.get("Percent", 0)
+
+                quantity = 0 if quantity_val is None or (isinstance(quantity_val, float) and math.isnan(quantity_val)) else int(quantity_val)
+                percent = 0 if percent_val is None or (isinstance(percent_val, float) and math.isnan(percent_val)) else int(percent_val)
+
+                quantity = max(0, quantity)
+                percent = min(100, max(0, percent))
 
                 if tech_id and loc_id:
                     if not act_id:
