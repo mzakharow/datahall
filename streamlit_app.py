@@ -1,19 +1,22 @@
 import streamlit as st
 from content import survey, teamlead_view, settings, reports
 from auth import (
-    get_user_by_email, register_user, is_team_lead, is_admin,
-    hash_password, check_password,
-    generate_token, get_user_by_token, save_token, delete_user_tokens
+    get_user_by_email,
+    register_user,
+    is_team_lead,
+    is_admin,
+    hash_password,
+    check_password,
+    generate_token,
+    get_user_by_token,
+    save_token,
+    delete_user_tokens,
 )
 from datetime import datetime, timedelta
 
-st.set_page_config(
-    page_title="Survey",
-    page_icon="✅",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Survey", page_icon="✅", layout="wide", initial_sidebar_state="expanded")
 
+# ========== UI cleanup ==========
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -22,7 +25,13 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Session defaults
+# ========== Token check from URL ==========
+query_params = st.query_params
+token = query_params.get("token", "")
+
+if "user" in st.session_state and not token:
+    del st.session_state.user
+
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 if "show_register" not in st.session_state:
@@ -30,9 +39,6 @@ if "show_register" not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 
-# --- Token check from query string
-query_params = st.query_params
-token = query_params.get("token", "")
 if token and not st.session_state.user:
     user = get_user_by_token(token)
     if user:
@@ -69,7 +75,6 @@ if not user:
                 token = generate_token(user["email"])
                 expires_at = datetime.utcnow() + timedelta(days=1)
                 save_token(token, user["id"], expires_at)
-
                 st.query_params = {"token": token}
                 st.success("Logged in successfully!")
                 st.rerun()
@@ -86,9 +91,16 @@ if not user:
         if st.button("Create account"):
             success = register_user(reg_name, reg_email, reg_password)
             if success:
-                st.success("Registered successfully! Now log in.")
-                st.session_state.show_register = False
-                st.session_state.show_login = True
+               
+                user = get_user_by_email(reg_email)
+                if user:
+                    st.session_state.user = user
+                    token = generate_token(user["email"])
+                    expires_at = datetime.utcnow() + timedelta(days=1)
+                    save_token(token, user["id"], expires_at)
+                    st.query_params = {"token": token}
+                    st.success("Registered and logged in!")
+                    st.rerun()
             else:
                 st.error("User with this email already exists.")
 
@@ -114,9 +126,7 @@ else:
     elif page == "Reports":
         reports.run()
     elif page == "Logout":
-        user_id = st.session_state.user["id"]
-        delete_user_tokens(user_id)
-
+        delete_user_tokens(user["id"])
         st.session_state.clear()
         st.success("Logged out. Session cleared.")
         st.rerun()
