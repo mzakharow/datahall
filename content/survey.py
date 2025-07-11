@@ -24,10 +24,11 @@ def run():
     email = st.text_input("Enter email", value=st.session_state.email)
     st.session_state.email = email
 
-    LOCAL_TZ = ZoneInfo("America/Chicago")
-    today_local = datetime.now(LOCAL_TZ).date()
-    start = datetime.combine(today_local, time.min).astimezone(ZoneInfo("UTC"))
-    end = datetime.combine(today_local, time.max).astimezone(ZoneInfo("UTC"))
+
+    LOCAL_TIMEZONE = "America/Chicago"
+    today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
+    # start = datetime.combine(today_local, time.min).astimezone(ZoneInfo("UTC"))
+    # end = datetime.combine(today_local, time.max).astimezone(ZoneInfo("UTC"))
 
     def load_last_task(user_id):
         with engine.connect() as conn:
