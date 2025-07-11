@@ -85,6 +85,7 @@ def run():
         df,
         num_rows="fixed",
         use_container_width=True,
+        hide_index=True,
         key="assignments_editor",
         column_config={
             "#": st.column_config.NumberColumn("#", disabled=True),
