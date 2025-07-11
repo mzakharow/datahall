@@ -85,3 +85,10 @@ def get_user_by_token(token: str) -> Optional[dict]:
         if row:
             return dict(row._mapping)
         return None
+
+def delete_user_tokens(user_id: int):
+    with engine.begin() as conn:
+        conn.execute(
+            text("DELETE FROM tokens WHERE user_id = :user_id"),
+            {"user_id": user_id}
+        )
