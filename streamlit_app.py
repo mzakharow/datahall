@@ -18,6 +18,13 @@ if "show_register" not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 
+query_params = st.query_params
+token = query_params.get("token", "")
+if token and not st.session_state.user:
+    user = get_user_by_token(token)
+    if user:
+        st.session_state.user = user
+
 user = st.session_state.user
 
 # ========== Without authorization ==========
@@ -63,6 +70,11 @@ if not user:
             # if user and user["password"] == login_password: 
             if user and check_password(login_password, user["password"]):
                 st.session_state.user = user
+                token = generate_token(user["email"])
+                expires_at = datetime.utcnow() + timedelta(days=1)
+                save_token(token, user["id"], expires_at)
+
+                st.experimental_set_query_params(token=token)
                 st.success("Logged in successfully!")
                 st.rerun()
             else:
