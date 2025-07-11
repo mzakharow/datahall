@@ -90,8 +90,10 @@ def run():
             "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
             "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
             "Rack": st.column_config.TextColumn("Rack", max_chars=5),
-            "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1),
-            "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1)
+            # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1),
+            # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1)
+            "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
+            "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
         }
     )
 
@@ -116,16 +118,16 @@ def run():
                 cable_id = cable_options.get(row["Cable Type"])
                 rack = str(row.get("Rack", "")).strip()[:5]
                 
-                # quantity = max(0, int(row.get("Quantity", 0)))
-                # percent = min(100, max(0, int(row.get("Percent", 0))))
-                quantity_val = row.get("Quantity", 0)
-                percent_val = row.get("Percent", 0)
+                quantity = max(0, int(row.get("Quantity", 0)))
+                percent = min(100, max(0, int(row.get("Percent", 0))))
+                # quantity_val = row.get("Quantity", 0)
+                # percent_val = row.get("Percent", 0)
 
-                quantity = 0 if quantity_val is None or (isinstance(quantity_val, float) and math.isnan(quantity_val)) else int(quantity_val)
-                percent = 0 if percent_val is None or (isinstance(percent_val, float) and math.isnan(percent_val)) else int(percent_val)
+                # quantity = 0 if quantity_val is None or (isinstance(quantity_val, float) and math.isnan(quantity_val)) else int(quantity_val)
+                # percent = 0 if percent_val is None or (isinstance(percent_val, float) and math.isnan(percent_val)) else int(percent_val)
 
-                quantity = max(0, quantity)
-                percent = min(100, max(0, percent))
+                # quantity = max(0, quantity)
+                # percent = min(100, max(0, percent))
 
                 if tech_id and loc_id:
                     if not act_id:
