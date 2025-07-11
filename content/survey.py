@@ -35,13 +35,16 @@ def run():
                 SELECT location_id, activity_id, cable_type_id, rack
                 FROM technician_tasks
                 WHERE technician_id = :tech_id
-                  AND timestamp >= :start AND timestamp < :end
+                  # AND timestamp >= :start AND timestamp < :end
+                  AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :today
                 ORDER BY timestamp DESC
                 LIMIT 1
             """), {
                 "tech_id": user_id,
-                "start": start,
-                "end": end
+                # "start": start,
+                # "end": end
+                "today": today_local,
+                "tz": LOCAL_TIMEZONE
             }).first()
 
         if row:
