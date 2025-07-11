@@ -1,6 +1,6 @@
 import streamlit as st
 from content import survey, teamlead_view, settings, reports
-from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password, generate_token, get_user_by_token, save_token
+from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password, generate_token, get_user_by_token, save_token, delete_user_tokens
 from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Survey",  page_icon="✅", layout="wide", initial_sidebar_state="expanded")
@@ -119,7 +119,10 @@ else:
     elif page == "Reports":
         reports.run()    
     elif page == "Logout":
-        st.session_state.user = None
-        st.success("Logged out.")
+        user_id = st.session_state.user["id"]
+        delete_user_tokens(user_id)
+
+        st.session_state.clear()  # сбрасывает все, включая user, токены и флаги
+        st.success("Logged out. Session cleared.")
         st.rerun()
         
