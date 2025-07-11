@@ -3,6 +3,9 @@ from sqlalchemy import create_engine, text
 import streamlit as st
 import base64
 from db import get_engine
+import secrets
+from datetime import datetime
+from typing import Optional
 
 db = st.secrets["database"]
 engine = get_engine()
@@ -50,3 +53,35 @@ def decode_email(encoded: str) -> str:
 
 def encode_email(email: str) -> str:
     return base64.urlsafe_b64encode(email.encode()).decode()
+
+def generate_token(email: str) -> str:
+    return secrets.token_urlsafe(32)
+
+def save_token(token: str, user_id: int, expires_at: datetime) -> None:
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO auth_tokens (token, user_id, expires_at)
+                VALUES (:token, :user_id, :expires_at)
+                ON CONFLICT (token) DO UPDATE
+                SET user_id = EXCLUDED.user_id,
+                    expires_at = EXCLUDED.expires_at
+            """),
+            {"token": token, "user_id": user_id, "expires_at": expires_at}
+        )
+
+def get_user_by_token(token: str) -> Optional[dict]:
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("""
+                SELECT t.*
+                FROM auth_tokens at
+                JOIN technicians t ON at.user_id = t.id
+                WHERE at.token = :token AND at.expires_at > NOW()
+            """),
+            {"token": token}
+        ).first()
+
+        if row:
+            return dict(row._mapping)
+        return None
