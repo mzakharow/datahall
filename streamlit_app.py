@@ -75,7 +75,7 @@ if not user:
                 expires_at = datetime.utcnow() + timedelta(days=1)
                 save_token(token, user["id"], expires_at)
 
-                st.experimental_set_query_params(token=token)
+                st.query_params = {"token": token}
                 st.success("Logged in successfully!")
                 st.rerun()
             else:
