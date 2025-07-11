@@ -89,6 +89,6 @@ def get_user_by_token(token: str) -> Optional[dict]:
 def delete_user_tokens(user_id: int):
     with engine.begin() as conn:
         conn.execute(
-            text("DELETE FROM tokens WHERE user_id = :user_id"),
+            text("DELETE FROM auth_tokens WHERE user_id = :user_id"),
             {"user_id": user_id}
         )
