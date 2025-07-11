@@ -1,9 +1,8 @@
-import streamlit as st
-import pandas as pd
-from sqlalchemy import text
 from datetime import datetime
 from zoneinfo import ZoneInfo
-import math
+import pandas as pd
+import streamlit as st
+from sqlalchemy import text
 from db import get_engine
 
 
@@ -53,7 +52,7 @@ def run():
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT technician_id, location_id, activity_id, cable_type_id, rack, quantity, percent
+            SELECT technician_id, location_id, activity_id, cable_type_id, rack, quantity, percent, timestamp
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
@@ -71,14 +70,16 @@ def run():
             latest_tasks[row.technician_id] = dict(row._mapping)
 
     df = pd.DataFrame([{
+        "#": i + 1,
         "Technician": tech.name,
         "Location": next((loc.name for loc in locations if loc.id == latest_tasks.get(tech.id, {}).get("location_id")), list(loc_options.keys())[0]),
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
         "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
-        "Percent": latest_tasks.get(tech.id, {}).get("percent", 0)
-    } for tech in technicians])
+        "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
+        "Time": latest_tasks.get(tech.id, {}).get("timestamp", "").astimezone(ZoneInfo(LOCAL_TIMEZONE)).strftime("%H:%M") if latest_tasks.get(tech.id, {}).get("timestamp") else ""
+    } for i, tech in enumerate(technicians)])
 
     edited_df = st.data_editor(
         df,
@@ -86,12 +87,12 @@ def run():
         use_container_width=True,
         key="assignments_editor",
         column_config={
+            "#": st.column_config.NumberColumn("#", disabled=True),
+            "Time": st.column_config.TextColumn("Time", disabled=True),
             "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
             "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
             "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
             "Rack": st.column_config.TextColumn("Rack", max_chars=5),
-            # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1),
-            # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1)
             "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
             "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
         }
@@ -106,8 +107,6 @@ def run():
                     row["Activity"] == original["Activity"] and
                     row["Cable Type"] == original["Cable Type"] and
                     str(row["Rack"]).strip() == str(original["Rack"]).strip() and
-                    # int(row["Quantity"]) == int(original["Quantity"]) and
-                    # int(row["Percent"]) == int(original["Percent"])
                     int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
                     int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
                 ):
@@ -119,17 +118,8 @@ def run():
                 act_id = act_options.get(row["Activity"])
                 cable_id = cable_options.get(row["Cable Type"])
                 rack = str(row.get("Rack", "")).strip()[:5]
-                
                 quantity = max(0, int(row.get("Quantity", 0)))
                 percent = min(100, max(0, int(row.get("Percent", 0))))
-                # quantity_val = row.get("Quantity", 0)
-                # percent_val = row.get("Percent", 0)
-
-                # quantity = 0 if quantity_val is None or (isinstance(quantity_val, float) and math.isnan(quantity_val)) else int(quantity_val)
-                # percent = 0 if percent_val is None or (isinstance(percent_val, float) and math.isnan(percent_val)) else int(percent_val)
-
-                # quantity = max(0, quantity)
-                # percent = min(100, max(0, percent))
 
                 if tech_id and loc_id:
                     if not act_id:
