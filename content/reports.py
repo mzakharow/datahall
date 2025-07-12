@@ -61,19 +61,19 @@ def run():
             query = """
                 SELECT 
                     t.name AS technician,
-
-                    COALESCE(t.team_lead, '—') AS team_lead,
+                    COALESCE(tl.name, '—') AS team_lead,
                     l.name AS location,
                     a.name AS activity,
                     ct.name AS cable_type,
                     task.quantity,
                     task.percent,
                     task.rack,
-                    COALESCE(tl.name, '—') AS created_by,
+                    COALESCE(src.name, '—') AS created_by,
                     task.timestamp
                 FROM technician_tasks task
                 LEFT JOIN technicians t ON task.technician_id = t.id
-                LEFT JOIN technicians tl ON task.source = tl.id
+                LEFT JOIN technicians tl ON t.team_lead = tl.id         
+                LEFT JOIN technicians src ON task.source = src.id 
                 LEFT JOIN locations l ON task.location_id = l.id
                 LEFT JOIN activities a ON task.activity_id = a.id
                 LEFT JOIN cable_type ct ON task.cable_type_id = ct.id
