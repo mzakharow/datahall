@@ -61,7 +61,8 @@ def run():
             query = """
                 SELECT 
                     t.name AS technician,
-                    COALESCE(tl.name, '—') AS team_lead,
+
+                    COALESCE(t.team_lead, '—') AS team_lead,
                     l.name AS location,
                     a.name AS activity,
                     ct.name AS cable_type,
