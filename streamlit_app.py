@@ -64,46 +64,61 @@ if not user:
     # ==== Login form ====
 
   
-    # if st.session_state.show_login:
-    #     st.subheader("🔐 Login")
-    #     login_email = st.text_input("Email", key="login_email")
-    #     login_password = st.text_input("Password", type="password", key="login_password")
-    #     hashed_pw = hash_password(login_password)
-    #     #st.success(hashed_pw)
-    #     #st.success(login_password)
-    #     # st.success(user["password"])
-    #     # hash_password(password)
-    #     if st.button("Login now"):
-    #         user = get_user_by_email(login_email)
-    #         # if user and user["password"] == login_password: 
-    #         if user and check_password(login_password, user["password"]):
-    #             st.session_state.user = user
-    #             st.success("Logged in successfully!")
-    #             st.rerun()
-    #         else:
-    #             st.error("Invalid credentials")
+    if st.session_state.show_login:
+        st.subheader("🔐 Login")
+        login_email = st.text_input("Email", key="login_email")
+        login_password = st.text_input("Password", type="password", key="login_password")
+        hashed_pw = hash_password(login_password)
+        #st.success(hashed_pw)
+        #st.success(login_password)
+        # st.success(user["password"])
+        # hash_password(password)
+        if st.button("Login now"):
+            user = get_user_by_email(login_email)
+            # if user and user["password"] == login_password: 
+            if user and check_password(login_password, user["password"]):
+                st.session_state.user = user
 
 
-    if st.button("Login now"):
-        user = get_user_by_email(login_email)
-        if user and check_password(login_password, user["password"]):
-            st.session_state.user = user
-            token = generate_token(user["email"])
-            expires_at = datetime.utcnow() + timedelta(days=1)
-            save_token(token, user["id"], expires_at)
-            redirect_url = f"/?token={token}"
+                token = generate_token(user["email"])
+                expires_at = datetime.utcnow() + timedelta(days=1)
+                save_token(token, user["id"], expires_at)
+                redirect_url = f"/?token={token}"
+                 st.markdown(
+                    f"""
+                    <meta http-equiv="refresh" content="0; url={redirect_url}" />
+                    <script>window.location.href = '{redirect_url}';</script>
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.stop()
+                
+                # st.success("Logged in successfully!")
+                # st.rerun()
+            else:
+                st.error("Invalid credentials")
+
+
+    # if st.button("Login now"):
+    #     user = get_user_by_email(login_email)
+    #     if user and check_password(login_password, user["password"]):
+    #         st.session_state.user = user
+    #         token = generate_token(user["email"])
+    #         expires_at = datetime.utcnow() + timedelta(days=1)
+    #         save_token(token, user["id"], expires_at)
+    #         redirect_url = f"/?token={token}"
         
-        # Редирект через HTML и JavaScript
-            st.markdown(
-                f"""
-                <meta http-equiv="refresh" content="0; url={redirect_url}" />
-                <script>window.location.href = '{redirect_url}';</script>
-                """,
-                unsafe_allow_html=True
-            )
-            st.stop()
-        else:
-            st.error("Invalid credentials")
+    #     # Редирект через HTML и JavaScript
+    #         st.markdown(
+    #             f"""
+    #             <meta http-equiv="refresh" content="0; url={redirect_url}" />
+    #             <script>window.location.href = '{redirect_url}';</script>
+    #             """,
+    #             unsafe_allow_html=True
+    #         )
+    #         st.stop()
+    #     else:
+    #         st.error("Invalid credentials")
  
 
     # ==== Registration form ====
