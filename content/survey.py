@@ -16,6 +16,7 @@ def run():
 
     # query_params = st.query_params
     token = query_params.get("token", "")  
+    
     if token:
         engine = get_engine()
         with engine.connect() as conn:
@@ -23,7 +24,8 @@ def run():
                 SELECT user_id, expires_at
                 FROM auth_tokens
                 WHERE token = :token
-            """), {"token": token}).fetchone()=
+            """), {"token": token}).fetchone()
+
             if result:
                 expires_at = result.expires_at.replace(tzinfo=timezone.utc)
                 if datetime.now(timezone.utc) < expires_at:
