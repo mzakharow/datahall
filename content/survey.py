@@ -15,27 +15,27 @@ def run():
     # url_email = decode_email(query_params.get("email", "").lower())
 
     # query_params = st.query_params
-    token = query_params.get("token", "")  
+    # token = query_params.get("token", "")  
     
-    if token:
-        engine = get_engine()
-        with engine.connect() as conn:
-            result = conn.execute(text("""
-                SELECT user_id, expires_at
-                FROM auth_tokens
-                WHERE token = :token
-            """), {"token": token}).fetchone()
+    # if token:
+    #     engine = get_engine()
+    #     with engine.connect() as conn:
+    #         result = conn.execute(text("""
+    #             SELECT user_id, expires_at
+    #             FROM auth_tokens
+    #             WHERE token = :token
+    #         """), {"token": token}).fetchone()
 
-            if result:
-                expires_at = result.expires_at.replace(tzinfo=timezone.utc)
-                if datetime.now(timezone.utc) < expires_at:
-                    user = get_user_by_token(token)
-                    if user:
-                        st.session_state.user = user
-                else:
-                    st.warning("⚠️ Token expired.")
-            else:
-                st.warning("⚠️ Invalid token.")
+    #         if result:
+    #             expires_at = result.expires_at.replace(tzinfo=timezone.utc)
+    #             if datetime.now(timezone.utc) < expires_at:
+    #                 user = get_user_by_token(token)
+    #                 if user:
+    #                     st.session_state.user = user
+    #             else:
+    #                 st.warning("⚠️ Token expired.")
+    #         else:
+    #             st.warning("⚠️ Invalid token.")
                 
 
     if "email_checked" not in st.session_state:
