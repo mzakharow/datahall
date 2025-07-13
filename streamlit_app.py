@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta, timezone
 from content import survey, teamlead_view, settings, reports
-from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password, generate_token, save_token
+from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password, generate_token, save_token, get_user_by_token
 
 st.set_page_config(page_title="Survey",  page_icon="✅", layout="wide", initial_sidebar_state="expanded")
 hide_streamlit_style = """
@@ -23,7 +23,6 @@ if "user" not in st.session_state:
 query_params = st.query_params
 token = query_params.get("token", "")
 if token and not st.session_state.user:
-    from auth import get_user_by_token
     user = get_user_by_token(token)
     if user:
         st.session_state.user = user
