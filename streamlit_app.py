@@ -79,7 +79,7 @@ if not user:
         #st.success(login_password)
         # st.success(user["password"])
         # hash_password(password)
-         if st.button("Login now"):
+        if st.button("Login now"):
             user = get_user_by_email(login_email)
             # if user and user["password"] == login_password: 
             if user and check_password(login_password, user["password"]):
