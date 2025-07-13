@@ -89,15 +89,16 @@ if not user:
                 token = generate_token(user["email"])
                 expires_at = datetime.utcnow() + timedelta(days=1)
                 save_token(token, user["id"], expires_at)
-                redirect_url = f"/?token={token}"
+                base_url = st.request.url.split("?")[0]
+                redirect_url = f"{base_url}?token={token}"
+
+                # 🔄 JS редирект
                 st.markdown(
                     f"""
                     <meta http-equiv="refresh" content="0; URL='{redirect_url}'" />
-                    <script>
-                        window.location.href = '{redirect_url}';
-                    </script>
+                    <script>window.location.href = '{redirect_url}';</script>
                     """,
-                    unsafe_allow_html=True,
+                    unsafe_allow_html=True
                 )
                 st.stop()
                 # redirect_url = f"/?token={token}"
