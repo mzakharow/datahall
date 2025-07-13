@@ -4,7 +4,7 @@ from datetime import datetime, date, time, timezone
 from sqlalchemy import text
 from zoneinfo import ZoneInfo
 from db import get_engine
-from auth import get_user_by_email, encode_email, decode_email, generate_token
+from auth import get_user_by_email, encode_email, decode_email, generate_token, get_user_by_token
 
 def run():
     st.title("📋 Survey")
