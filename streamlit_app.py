@@ -92,7 +92,15 @@ if not user:
             expires_at = datetime.utcnow() + timedelta(days=1)
             save_token(token, user["id"], expires_at)
             redirect_url = f"/?token={token}"
-             st.markdown(f"<meta http-equiv='refresh' content='0; url={redirect_url}'/> <script>window.location.href = '{redirect_url}';</script>", unsafe_allow_html=True)
+        
+        # Редирект через HTML и JavaScript
+            st.markdown(
+                f"""
+                <meta http-equiv="refresh" content="0; url={redirect_url}" />
+                <script>window.location.href = '{redirect_url}';</script>
+                """,
+                unsafe_allow_html=True
+            )
             st.stop()
         else:
             st.error("Invalid credentials")
