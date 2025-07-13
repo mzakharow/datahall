@@ -89,8 +89,8 @@ if not user:
                 token = generate_token(user["email"])
                 expires_at = datetime.utcnow() + timedelta(days=1)
                 save_token(token, user["id"], expires_at)
-                base_url = st.request.url.split("?")[0]
-                redirect_url = f"{base_url}?token={token}"
+                app_url = "https://introl.streamlit.app"  # или "https://yourdomain.com"
+                redirect_url = f"{app_url}/?token={token}"
 
                 # 🔄 JS редирект
                 st.markdown(
