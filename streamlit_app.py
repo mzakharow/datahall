@@ -79,66 +79,18 @@ if not user:
         #st.success(login_password)
         # st.success(user["password"])
         # hash_password(password)
-        if st.button("Login now"):
+         if st.button("Login now"):
             user = get_user_by_email(login_email)
             # if user and user["password"] == login_password: 
             if user and check_password(login_password, user["password"]):
                 st.session_state.user = user
-
-
-                token = generate_token(user["email"])
-                expires_at = datetime.utcnow() + timedelta(days=1)
-                save_token(token, user["id"], expires_at)
-                app_url = "https://introl.streamlit.app"  # или "https://yourdomain.com"
-                redirect_url = f"{app_url}/?token={token}"
-
-                # 🔄 JS редирект
-                st.markdown(
-                    f"""
-                    <meta http-equiv="refresh" content="0; URL='{redirect_url}'" />
-                    <script>window.location.href = '{redirect_url}';</script>
-                    """,
-                    unsafe_allow_html=True
-                )
-                st.stop()
-                # redirect_url = f"/?token={token}"
-                # st.markdown(
-                #     f"""
-                #     <meta http-equiv="refresh" content="0; url={redirect_url}" />
-                #     <script>window.location.href = '{redirect_url}';</script>
-                #     """,
-                #     unsafe_allow_html=True
-                # )
-                # st.stop()
-                
-                # st.success("Logged in successfully!")
-                # st.rerun()
+                st.success("Logged in successfully!")
+                st.rerun()
             else:
                 st.error("Invalid credentials")
-
-
-    # if st.button("Login now"):
-    #     user = get_user_by_email(login_email)
-    #     if user and check_password(login_password, user["password"]):
-    #         st.session_state.user = user
-    #         token = generate_token(user["email"])
-    #         expires_at = datetime.utcnow() + timedelta(days=1)
-    #         save_token(token, user["id"], expires_at)
-    #         redirect_url = f"/?token={token}"
-        
-    #     # Редирект через HTML и JavaScript
-    #         st.markdown(
-    #             f"""
-    #             <meta http-equiv="refresh" content="0; url={redirect_url}" />
-    #             <script>window.location.href = '{redirect_url}';</script>
-    #             """,
-    #             unsafe_allow_html=True
-    #         )
-    #         st.stop()
-    #     else:
-    #         st.error("Invalid credentials")
- 
-
+            else:
+                st.error("Invalid credentials")
+                
     # ==== Registration form ====
     if st.session_state.show_register:
         st.subheader("📝 Register")
