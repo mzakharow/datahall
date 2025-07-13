@@ -92,12 +92,23 @@ if not user:
                 redirect_url = f"/?token={token}"
                 st.markdown(
                     f"""
-                    <meta http-equiv="refresh" content="0; url={redirect_url}" />
-                    <script>window.location.href = '{redirect_url}';</script>
+                    <meta http-equiv="refresh" content="0; URL='{redirect_url}'" />
+                    <script>
+                        window.location.href = '{redirect_url}';
+                    </script>
                     """,
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
                 st.stop()
+                # redirect_url = f"/?token={token}"
+                # st.markdown(
+                #     f"""
+                #     <meta http-equiv="refresh" content="0; url={redirect_url}" />
+                #     <script>window.location.href = '{redirect_url}';</script>
+                #     """,
+                #     unsafe_allow_html=True
+                # )
+                # st.stop()
                 
                 # st.success("Logged in successfully!")
                 # st.rerun()
