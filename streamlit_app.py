@@ -88,8 +88,6 @@ if not user:
                 st.rerun()
             else:
                 st.error("Invalid credentials")
-            else:
-                st.error("Invalid credentials")
                 
     # ==== Registration form ====
     if st.session_state.show_register:
