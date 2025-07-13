@@ -1,6 +1,6 @@
 import streamlit as st
 from content import survey, teamlead_view, settings, reports
-from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password
+from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password, generate_token
 
 st.set_page_config(page_title="Survey",  page_icon="✅", layout="wide", initial_sidebar_state="expanded")
 hide_streamlit_style = """
