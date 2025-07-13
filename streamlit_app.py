@@ -12,6 +12,12 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+if "show_login" not in st.session_state:
+    st.session_state.show_login = False
+if "show_register" not in st.session_state:
+    st.session_state.show_register = False
+if "user" not in st.session_state:
+    st.session_state.user = None
 
 #############
 query_params = st.query_params
@@ -22,12 +28,12 @@ if token and not st.session_state.user:
     if user:
         st.session_state.user = user
 
-if "show_login" not in st.session_state:
-    st.session_state.show_login = False
-if "show_register" not in st.session_state:
-    st.session_state.show_register = False
-if "user" not in st.session_state:
-    st.session_state.user = None
+# if "show_login" not in st.session_state:
+#     st.session_state.show_login = False
+# if "show_register" not in st.session_state:
+#     st.session_state.show_register = False
+# if "user" not in st.session_state:
+#     st.session_state.user = None
 
 user = st.session_state.user
 #################
