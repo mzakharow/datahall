@@ -180,7 +180,7 @@ def run():
     if submitted:
         with engine.begin() as conn:
             conn.execute(text("""
-                INSERT INTO rackstates (rack_id, activity_id, cable_type_id, status_id, position, quantity, percent, created_by, created_at)
+                INSERT INTO rack_states (rack_id, activity_id, cable_type_id, status_id, position, quantity, percent, created_by, created_at)
                 VALUES (:rack_id, :activity_id, :cable_type_id, :status_id, :position, :quantity, :percent, :created_by, NOW())
             """), {
                 "rack_id": rack_options[selected_rack],
