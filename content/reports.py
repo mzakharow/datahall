@@ -114,20 +114,7 @@ def run():
 
     if selected_dh:
         with engine.connect() as conn:
-            # Получаем уникальные значения для фильтров
-            filter_data = conn.execute(text("""
-                SELECT DISTINCT name, su, lu FROM racks WHERE dh = :selected_dh
-            """), {"selected_dh": selected_dh}).fetchall()
-    
-            rack_names = sorted({row.name for row in filter_data})
-            su_values = sorted({row.su for row in filter_data})
-            lu_values = sorted({row.lu for row in filter_data})
-    
-            selected_rack = st.selectbox("🔲 Filter by Rack", ["All"] + rack_names)
-            selected_su = st.selectbox("🔼 Filter by SU", ["All"] + su_values)
-            selected_lu = st.selectbox("🔽 Filter by LU", ["All"] + lu_values)
-
-            base_query = """
+            result = conn.execute(text("""
                 SELECT 
                     r.name AS rack_name,
                     r.dh,
@@ -149,27 +136,21 @@ def run():
                 LEFT JOIN statuses s ON rs.status_id = s.id
                 LEFT JOIN technicians t ON rs.created_by = t.id
                 WHERE r.dh = :selected_dh
-            """
+                ORDER BY rs.created_at DESC NULLS LAST
+            """), {"selected_dh": selected_dh})
 
-            params = {"selected_dh": selected_dh}
-
-            if selected_rack != "All":
-                base_query += " AND r.name = :rack_name"
-                params["rack_name"] = selected_rack
-            if selected_su != "All":
-                base_query += " AND r.su = :su"
-                params["su"] = selected_su
-            if selected_lu != "All":
-                base_query += " AND r.lu = :lu"
-                params["lu"] = selected_lu
-
-            base_query += " ORDER BY rs.created_at DESC NULLS LAST"
-
-            result = conn.execute(text(base_query), params)
             rows = result.fetchall()
-
             if rows:
                 df = pd.DataFrame([dict(row._mapping) for row in rows])
+
+                with st.expander("🔍 Filters"):
+                    for col in ["rack_name", "su", "lu"]:
+                        if col in df.columns:
+                            options = df[col].dropna().unique().tolist()
+                            selected = st.multiselect(f"Filter by {col}", options, key=f"filter_{col}")
+                            if selected:
+                                df = df[df[col].isin(selected)]
+
                 st.dataframe(df, use_container_width=True)
             else:
-                st.info("No data for selected DH with applied filters.")
+                st.info("No data for selected DH.")
