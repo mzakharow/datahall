@@ -106,7 +106,7 @@ def run():
     st.caption(f"Total records: {len(df)}")
 
 
-with engine.connect() as conn:
+    with engine.connect() as conn:
         dhs = conn.execute(text("SELECT DISTINCT dh FROM racks ORDER BY dh")).fetchall()
         dh_options = [row.dh for row in dhs if row.dh]
 
