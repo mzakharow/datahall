@@ -173,6 +173,3 @@ def run():
                 st.dataframe(df, use_container_width=True)
             else:
                 st.info("No data for selected DH with applied filters.")
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.info("No data for selected DH.")
