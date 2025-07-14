@@ -124,14 +124,14 @@ def run():
                     s.name AS status,
                     rs.quantity,
                     rs.percent,
-                    u.name AS created_by,
+                    t.name AS created_by,
                     rs.timestamp
                 FROM rack_states rs
                 LEFT JOIN racks r ON rs.rack_id = r.id
                 LEFT JOIN activities a ON rs.activity_id = a.id
                 LEFT JOIN cable_type ct ON rs.cable_type_id = ct.id
                 LEFT JOIN statuses s ON rs.status_id = s.id
-                LEFT JOIN users u ON rs.created_by = u.id
+                LEFT JOIN technicians t ON rs.created_by = u.id
                 WHERE r.dh = :selected_dh
                 ORDER BY rs.timestamp DESC
             """), {"selected_dh": selected_dh})
