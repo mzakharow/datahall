@@ -129,19 +129,19 @@ def run():
                     rs.percent,
                     t.name AS created_by,
                     rs.created_at
-                FROM (
+                FROM racks r
+                LEFT JOIN (
                     SELECT DISTINCT ON (rack_id, position, activity_id, cable_type_id, status_id)
                            *
                     FROM rack_states
                     ORDER BY rack_id, position, activity_id, cable_type_id, status_id, created_at DESC
-                ) rs
-                LEFT JOIN racks r ON rs.rack_id = r.id
+                ) rs ON rs.rack_id = r.id
                 LEFT JOIN activities a ON rs.activity_id = a.id
                 LEFT JOIN cable_type ct ON rs.cable_type_id = ct.id
                 LEFT JOIN statuses s ON rs.status_id = s.id
                 LEFT JOIN technicians t ON rs.created_by = t.id
                 WHERE r.dh = :selected_dh
-                ORDER BY rs.created_at DESC;
+                ORDER BY r.name, rs.created_at DESC NULLS LAST;
             """), {"selected_dh": selected_dh})
 
             rows = result.fetchall()
