@@ -131,7 +131,7 @@ def run():
                     rs.created_at
                 FROM racks r
                 LEFT JOIN (
-                    SELECT DISTINCT ON (rack_id, position, activity_id, cable_type_id, status_id)
+                    SELECT DISTINCT ON (rack_id, position, activity_id, cable_type_id)
                            *
                     FROM rack_states
                     ORDER BY rack_id, position, activity_id, cable_type_id, status_id, created_at DESC
