@@ -131,7 +131,7 @@ def run():
                 LEFT JOIN activities a ON rs.activity_id = a.id
                 LEFT JOIN cable_type ct ON rs.cable_type_id = ct.id
                 LEFT JOIN statuses s ON rs.status_id = s.id
-                LEFT JOIN technicians t ON rs.created_by = u.id
+                LEFT JOIN technicians t ON rs.created_by = t.id
                 WHERE r.dh = :selected_dh
                 ORDER BY rs.timestamp DESC
             """), {"selected_dh": selected_dh})
