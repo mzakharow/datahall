@@ -104,3 +104,41 @@ def run():
 
     st.dataframe(df, use_container_width=True)
     st.caption(f"Total records: {len(df)}")
+
+
+with engine.connect() as conn:
+        dhs = conn.execute(text("SELECT DISTINCT dh FROM racks ORDER BY dh")).fetchall()
+        dh_options = [row.dh for row in dhs if row.dh]
+
+    selected_dh = st.selectbox("📍 Select Datahall (DH)", dh_options)
+
+    if selected_dh:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT 
+                    r.name AS rack_name,
+                    r.dh,
+                    rs.position,
+                    a.name AS activity,
+                    ct.name AS cable_type,
+                    s.name AS status,
+                    rs.quantity,
+                    rs.percent,
+                    u.name AS created_by,
+                    rs.timestamp
+                FROM rack_states rs
+                LEFT JOIN racks r ON rs.rack_id = r.id
+                LEFT JOIN activities a ON rs.activity_id = a.id
+                LEFT JOIN cable_type ct ON rs.cable_type_id = ct.id
+                LEFT JOIN statuses s ON rs.status_id = s.id
+                LEFT JOIN users u ON rs.created_by = u.id
+                WHERE r.dh = :selected_dh
+                ORDER BY rs.timestamp DESC
+            """), {"selected_dh": selected_dh})
+
+            rows = result.fetchall()
+            if rows:
+                df = pd.DataFrame([dict(row._mapping) for row in rows])
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("No data for selected DH.")
