@@ -125,7 +125,7 @@ def run():
                     rs.quantity,
                     rs.percent,
                     t.name AS created_by,
-                    rs.timestamp
+                    rs.created_at
                 FROM rack_states rs
                 LEFT JOIN racks r ON rs.rack_id = r.id
                 LEFT JOIN activities a ON rs.activity_id = a.id
@@ -133,7 +133,7 @@ def run():
                 LEFT JOIN statuses s ON rs.status_id = s.id
                 LEFT JOIN technicians t ON rs.created_by = t.id
                 WHERE r.dh = :selected_dh
-                ORDER BY rs.timestamp DESC
+                ORDER BY rs.created_at DESC
             """), {"selected_dh": selected_dh})
 
             rows = result.fetchall()
