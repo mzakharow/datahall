@@ -35,13 +35,13 @@ def run():
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
 
+        racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name")).fetchall()
+        rack_options = {f"{rack.name} ({rack.dh})": rack.id for rack in racks}
+        rack_id_to_display = {rack.id: f"{rack.name} ({rack.dh})" for rack in racks}
+
     if not technicians:
         st.info("You don't have a team.")
         return
-
-    racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name")).fetchall()
-    rack_options = {f"{rack.name} ({rack.dh})": rack.id for rack in racks}
-    rack_id_to_display = {rack.id: f"{rack.name} ({rack.dh})" for rack in racks}
 
     loc_options = {loc.name: loc.id for loc in locations}
     act_options = {act.name: act.id for act in activities}
