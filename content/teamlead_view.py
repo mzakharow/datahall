@@ -35,16 +35,6 @@ def run():
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
 
-        # racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name")).fetchall()
-        # rack_options = {f"{rack.name} ({rack.dh})": rack.id for rack in racks}
-        # rack_id_to_display = {rack.id: f"{rack.name} ({rack.dh})" for rack in racks}
-
-        rack_id = latest_tasks.get(tech.id, {}).get("rack_id")
-        rack_display = rack_id_to_display[rack_id] if rack_id in rack_id_to_display else ""
-        rack_options = {"": None, **{f"{r.name} ({r.dh})": r.id for r in racks}}
-
-    latest_tasks = {} 
-    
     if not technicians:
         st.info("You don't have a team.")
         return
@@ -85,8 +75,6 @@ def run():
         "Location": next((loc.name for loc in locations if loc.id == latest_tasks.get(tech.id, {}).get("location_id")), list(loc_options.keys())[0]),
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
-        # "Rack Name": rack_id_to_display.get(latest_tasks.get(tech.id, {}).get("rack_id"), list(rack_options.keys())[0]),
-        "Rack Name": rack_display,
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
         "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
@@ -107,7 +95,6 @@ def run():
                 "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
                 "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
                 "Rack": st.column_config.TextColumn("Rack", max_chars=5),
-                "Rack Name": st.column_config.SelectboxColumn("Rack Name", options=list(rack_options.keys())),
                 "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
                 "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
             }
@@ -135,10 +122,6 @@ def run():
                 act_id = act_options.get(row["Activity"])
                 cable_id = cable_options.get(row["Cable Type"])
                 rack = str(row.get("Rack", "")).strip()[:5]
-
-                rack_display_name = row.get("Rack Name")
-                rack_id = rack_options.get(rack_display_name)
-                
                 quantity = max(0, int(row.get("Quantity", 0)))
                 percent = min(100, max(0, int(row.get("Percent", 0))))
 
@@ -147,16 +130,15 @@ def run():
                         act_id = None
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
-                            technician_id, location_id, activity_id, cable_type_id, rack, rack_id, source, timestamp, quantity, percent
+                            technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp, quantity, percent
                         )
-                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack, :rack_id, :source, :timestamp, :quantity, :percent)
+                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack, :source, :timestamp, :quantity, :percent)
                     """), {
                         "tech_id": tech_id,
                         "loc_id": loc_id,
                         "act_id": act_id,
                         "cable_type_id": cable_id,
                         "rack": rack,
-                        "rack_id": rack_id,
                         "source": team_lead_id,
                         "timestamp": datetime.now(),
                         "quantity": quantity,
