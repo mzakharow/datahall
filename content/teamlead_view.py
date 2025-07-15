@@ -43,6 +43,8 @@ def run():
         rack_display = rack_id_to_display[rack_id] if rack_id in rack_id_to_display else ""
         rack_options = {"": None, **{f"{r.name} ({r.dh})": r.id for r in racks}}
 
+    latest_tasks = {} 
+    
     if not technicians:
         st.info("You don't have a team.")
         return
