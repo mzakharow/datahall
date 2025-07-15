@@ -158,49 +158,95 @@ def run():
 
         st.success("✅ Changes saved!")
         st.rerun()
-
+    
     st.markdown("---")
-    st.subheader("📌 Close task")
+    st.subheader("📊 Latest Rack State Entries")
 
     with engine.connect() as conn:
-        racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name")).fetchall()
-        activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
-        cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name")).fetchall()
-        statuses = conn.execute(text("SELECT id, name FROM statuses ORDER BY name")).fetchall()
+        rows = conn.execute(text("""
+            SELECT 
+                r.name AS rack_name,
+                r.dh,
+                r.su,
+                r.lu,
+                r.row,
+                rs.position,
+                a.name AS activity,
+                ct.name AS cable_type,
+                s.name AS status,
+                rs.quantity,
+                rs.percent,
+                t.name AS created_by,
+                rs.created_at
+            FROM (
+                SELECT DISTINCT ON (rack_id, position, activity_id, cable_type_id, status_id) *
+                FROM rack_states
+                ORDER BY rack_id, position, activity_id, cable_type_id, status_id, created_at DESC
+            ) rs
+            LEFT JOIN racks r ON rs.rack_id = r.id
+            LEFT JOIN activities a ON rs.activity_id = a.id
+            LEFT JOIN cable_type ct ON rs.cable_type_id = ct.id
+            LEFT JOIN statuses s ON rs.status_id = s.id
+            LEFT JOIN technicians t ON rs.created_by = t.id
+            ORDER BY rs.created_at DESC
+        """)).fetchall()
 
-    rack_options = {f"{r.name} ({r.dh})": r.id for r in racks}
-    activity_options = {a.name: a.id for a in activities}
-    cable_type_options = {c.name: c.id for c in cable_types}
-    status_options = {s.name: s.id for s in statuses}
-    positions = {"Left": "left", "Right": "right"}
+        if rows:
+            df = pd.DataFrame([dict(row._mapping) for row in rows])
 
-    with st.form("rack_task_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            selected_rack = st.selectbox("Rack", list(rack_options.keys()))
-            selected_activity = st.selectbox("Activity", list(activity_options.keys()))
-            selected_cable = st.selectbox("Cable type", list(cable_type_options.keys()))
-            selected_status = st.selectbox("Status", list(status_options.keys()))
-        with col2:
-            selected_position = st.selectbox("position", list(positions.keys()))
-            quantity = st.number_input("quantity", min_value=0, step=1)
-            percent = st.slider("percent", min_value=0, max_value=100, step=1)
+            with st.expander("🔍 Filters"):
+                for col in ["rack_name", "su", "lu", "row"]:
+                    if col in df.columns:
+                        options = df[col].dropna().unique().tolist()
+                        selected = st.multiselect(f"Filter by {col}", options, key=f"filter_{col}")
+                        if selected:
+                            df = df[df[col].isin(selected)]
 
-        submitted = st.form_submit_button("✅ Save")
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("No rack state data available.")
+    # st.markdown("---")
+    # st.subheader("📌 Close task")
 
-    if submitted:
-        with engine.begin() as conn:
-            conn.execute(text("""
-                INSERT INTO rack_states (rack_id, activity_id, cable_type_id, status_id, position, quantity, percent, created_by, created_at)
-                VALUES (:rack_id, :activity_id, :cable_type_id, :status_id, :position, :quantity, :percent, :created_by, NOW())
-            """), {
-                "rack_id": rack_options[selected_rack],
-                "activity_id": activity_options[selected_activity],
-                "cable_type_id": cable_type_options[selected_cable],
-                "status_id": status_options[selected_status],
-                "position": positions[selected_position],
-                "quantity": quantity,
-                "percent": percent,
-                "created_by": st.session_state.user["id"]
-            })
-        st.success("✅ Changes saved!")
+    # with engine.connect() as conn:
+    #     racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name")).fetchall()
+    #     activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
+    #     cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name")).fetchall()
+    #     statuses = conn.execute(text("SELECT id, name FROM statuses ORDER BY name")).fetchall()
+
+    # rack_options = {f"{r.name} ({r.dh})": r.id for r in racks}
+    # activity_options = {a.name: a.id for a in activities}
+    # cable_type_options = {c.name: c.id for c in cable_types}
+    # status_options = {s.name: s.id for s in statuses}
+    # positions = {"Left": "left", "Right": "right"}
+
+    # with st.form("rack_task_form"):
+    #     col1, col2 = st.columns(2)
+    #     with col1:
+    #         selected_rack = st.selectbox("Rack", list(rack_options.keys()))
+    #         selected_activity = st.selectbox("Activity", list(activity_options.keys()))
+    #         selected_cable = st.selectbox("Cable type", list(cable_type_options.keys()))
+    #         selected_status = st.selectbox("Status", list(status_options.keys()))
+    #     with col2:
+    #         selected_position = st.selectbox("position", list(positions.keys()))
+    #         quantity = st.number_input("quantity", min_value=0, step=1)
+    #         percent = st.slider("percent", min_value=0, max_value=100, step=1)
+
+    #     submitted = st.form_submit_button("✅ Save")
+
+    # if submitted:
+    #     with engine.begin() as conn:
+    #         conn.execute(text("""
+    #             INSERT INTO rack_states (rack_id, activity_id, cable_type_id, status_id, position, quantity, percent, created_by, created_at)
+    #             VALUES (:rack_id, :activity_id, :cable_type_id, :status_id, :position, :quantity, :percent, :created_by, NOW())
+    #         """), {
+    #             "rack_id": rack_options[selected_rack],
+    #             "activity_id": activity_options[selected_activity],
+    #             "cable_type_id": cable_type_options[selected_cable],
+    #             "status_id": status_options[selected_status],
+    #             "position": positions[selected_position],
+    #             "quantity": quantity,
+    #             "percent": percent,
+    #             "created_by": st.session_state.user["id"]
+    #         })
+    #     st.success("✅ Changes saved!")
