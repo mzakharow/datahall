@@ -16,17 +16,17 @@ if not st.user.is_logged_in:
     if st.button("Authenticate"):
         st.login("google")
 
-    col_space, col_buttons = st.columns([10, 2]) 
-    with col_buttons:
-        col_login, col_register = st.columns([1, 1])
-        with col_login:
-            if st.button("🔐 Login"):
-                st.session_state.show_login = not st.session_state.show_login
-                st.session_state.show_register = False
-        with col_register:
-            if st.button("📝 Register"):
-                st.session_state.show_register = not st.session_state.show_register
-                st.session_state.show_login = False
+    # col_space, col_buttons = st.columns([10, 2]) 
+    # with col_buttons:
+    #     col_login, col_register = st.columns([1, 1])
+    #     with col_login:
+    #         if st.button("🔐 Login"):
+    #             st.session_state.show_login = not st.session_state.show_login
+    #             st.session_state.show_register = False
+    #     with col_register:
+    #         if st.button("📝 Register"):
+    #             st.session_state.show_register = not st.session_state.show_register
+    #             st.session_state.show_login = False
 else:
     user = get_user_by_email(st.user.email)
     if user:
