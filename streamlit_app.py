@@ -12,8 +12,9 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-if st.button("Authenticate"):
-    st.login("google")
+if not st.experimental_user.is_logged_in:    
+    if st.button("Authenticate"):
+        st.login("google")
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
