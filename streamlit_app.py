@@ -18,7 +18,7 @@ if not st.user.is_logged_in:
     
     if st.button("Authenticate"):
         st.login("google")
-
+        user = get_user_by_email(st.user.email)
         
         # user = st.session_state.user
         # user = get_user_by_email(st.user.email)
@@ -38,11 +38,11 @@ else:
         st.session_state.user = None
         # st.rerun()
 
-user = get_user_by_email(st.user.email)
-if user:
-    # st.session_state.user = user
-    st.success(user["name"])
-    st.session_state.email_checked = True
+# user = get_user_by_email(st.user.email)
+# if user:
+#     # st.session_state.user = user
+#     st.success(user["name"])
+#     st.session_state.email_checked = True
     # user = st.session_state.user
 
 # user = get_user_by_email(st.user.email)
