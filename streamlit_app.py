@@ -16,10 +16,11 @@ if st.user.is_logged_in:
     if st.button("Logout"):
         col_user_1, col_user_2 = st.columns(2)
         with col_user_1:
+            user = get_user_by_email(st.user.email)
+        with col_user_2:             
             st.logout()
-        with col_user_2: 
             st.rerun()
-    user = get_user_by_email(st.user.email)
+    
     if user:
         st.session_state.user = user
         st.success(user["name"])
