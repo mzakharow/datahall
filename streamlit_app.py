@@ -14,9 +14,13 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if st.user.is_logged_in:    
     st.logout()
-# else:
-#     if st.button("Authenticate"):
-#         st.login("google")
+    user = get_user_by_email(st.user.email)
+    if user:
+        st.session_state.user = user
+        st.success(st.user.email)
+else:
+    if st.button("Authenticate"):
+        st.login("google")
 
     # col_space, col_buttons = st.columns([10, 2]) 
     # with col_buttons:
@@ -29,11 +33,11 @@ if st.user.is_logged_in:
     #         if st.button("📝 Register"):
     #             st.session_state.show_register = not st.session_state.show_register
     #             st.session_state.show_login = False
-else:
-    user = get_user_by_email(st.user.email)
-    if user:
-        st.session_state.user = user
-        st.success(st.user.email)
+# else:
+#     user = get_user_by_email(st.user.email)
+#     if user:
+#         st.session_state.user = user
+#         st.success(st.user.email)
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
