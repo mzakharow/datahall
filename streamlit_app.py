@@ -46,6 +46,10 @@ else:
             st.session_state.user = user
             st.session_state.email_checked = True
             st.success(user["name"])
+            st.session_state.show_login = False
+            st.session_state.show_register = False
+        else:
+            st.error("The user doesn't have permission to log in.")
     if st.button("Logout"):
         st.logout()
         st.session_state.user = None
