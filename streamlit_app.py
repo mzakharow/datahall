@@ -13,13 +13,9 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if st.user.is_logged_in:    
-    col_user_1, col_user_2 = st.columns(2)
-    with col_user_1:
-        user = get_user_by_email(st.user.email)
-    with col_user_2:  
-        if st.button("Logout"):
-            st.logout()
-            st.rerun()
+    if st.button("Logout"):
+        st.logout()
+        st.rerun()
     
     if user:
         st.session_state.user = user
