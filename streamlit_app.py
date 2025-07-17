@@ -12,7 +12,7 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-if not st.experimental_user.is_logged_in:    
+if not st.user.is_logged_in:    
     if st.button("Authenticate"):
         st.login("google")
 
@@ -28,10 +28,10 @@ if not st.experimental_user.is_logged_in:
                 st.session_state.show_register = not st.session_state.show_register
                 st.session_state.show_login = False
 else:
-    user = get_user_by_email(st.experimental_user.email)
+    user = get_user_by_email(st.user.email)
     if user:
         st.session_state.user = user
-        st.success(st.experimental_user.email)
+        st.success(st.email)
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
