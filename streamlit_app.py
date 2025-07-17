@@ -18,6 +18,7 @@ if not st.user.is_logged_in:
     
     if st.button("Authenticate"):
         st.login("google")
+        st.success(st.user.email)
         if st.user.is_logged_in:
             user = get_user_by_email(st.user.email)
             if user:
