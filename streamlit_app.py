@@ -23,11 +23,11 @@ if not st.user.is_logged_in:
             st.session_state.email_checked = True
         # user = st.session_state.user
 else:
-    if user:
-        st.session_state.user = user
-        st.success(user["name"])
-        st.session_state.email_checked = True
-        user = st.session_state.user
+    # if user:
+    #     st.session_state.user = user
+    #     st.success(user["name"])
+    #     st.session_state.email_checked = True
+    #     user = st.session_state.user
     if st.button("Logout"):
         st.logout()
         st.rerun()
