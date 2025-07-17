@@ -13,14 +13,13 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if st.user.is_logged_in:    
-    if st.button("Logout"):
-        st.logout()
-        st.rerun()
-    
     if user:
         st.session_state.user = user
         st.success(user["name"])
         st.session_state.email_checked = True
+    if st.button("Logout"):
+        st.logout()
+        st.rerun()
 else:
     if st.button("Authenticate"):
         st.login("google")
