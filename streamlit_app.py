@@ -12,6 +12,7 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+user = st.session_state.user
 if st.user.is_logged_in:    
     if user:
         st.session_state.user = user
