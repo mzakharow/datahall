@@ -19,7 +19,7 @@ if st.user.is_logged_in:
     user = get_user_by_email(st.user.email)
     if user:
         st.session_state.user = user
-        st.success(st.user.email)
+        st.success(user)
 else:
     if st.button("Authenticate"):
         st.login("google")
