@@ -103,6 +103,7 @@ if "user" not in st.session_state:
 
 
 # ========== Without authorization ==========
+user = st.session_state.user
 if not user:
     survey.run()
 
