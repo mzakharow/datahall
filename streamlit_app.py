@@ -49,12 +49,12 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 #############
-query_params = st.query_params
-token = query_params.get("token", "")
-if token and not st.session_state.user:
-    user = get_user_by_token(token)
-    if user:
-        st.session_state.user = user
+# query_params = st.query_params
+# token = query_params.get("token", "")
+# if token and not st.session_state.user:
+#     user = get_user_by_token(token)
+#     if user:
+#         st.session_state.user = user
 
 # if "show_login" not in st.session_state:
 #     st.session_state.show_login = False
