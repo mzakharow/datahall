@@ -25,7 +25,7 @@ else:
     #     user = st.session_state.user
     if st.button("Logout"):
         st.logout()
-        st.rerun()
+        # st.rerun()
 
 
     user = get_user_by_email(st.user.email)
