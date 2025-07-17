@@ -14,7 +14,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 if not st.user.is_logged_in:   
-    st.session_state.user_data = None
+    # st.session_state.user_data = None
     
     if st.button("Authenticate"):
         st.login("google")
