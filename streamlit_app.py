@@ -205,4 +205,5 @@ else:
     elif page == "Logout":
         st.session_state.user = None
         st.success("Logged out.")
+        st.logout()
         st.rerun()
