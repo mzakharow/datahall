@@ -38,10 +38,10 @@ else:
 
 
 # user = get_user_by_email(st.user.email)
-if user:
-    st.session_state.user = user
-    st.success(st.user.email)
-    st.session_state.email_checked = True
+# if user:
+#     st.session_state.user = user
+#     st.success(st.user.email)
+#     st.session_state.email_checked = True
 
     # col_space, col_buttons = st.columns([10, 2]) 
     # with col_buttons:
