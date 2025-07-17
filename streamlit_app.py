@@ -20,6 +20,10 @@ if not st.user.is_logged_in:
         st.login("google")
         if st.user.is_logged_in:
             user = get_user_by_email(st.user.email)
+            if user:
+                st.session_state.user = user
+                st.success(user["name"])
+                st.session_state.email_checked = True
         
         # user = st.session_state.user
         # user = get_user_by_email(st.user.email)
