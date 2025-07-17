@@ -15,6 +15,8 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 if not st.experimental_user.is_logged_in:    
     if st.button("Authenticate"):
         st.login("google")
+else:
+    st.success(st.experimental_user.email)
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
