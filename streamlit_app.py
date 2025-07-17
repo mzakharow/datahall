@@ -12,18 +12,21 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-user = st.session_state.user
+
 if st.user.is_logged_in:    
     if user:
         st.session_state.user = user
         st.success(user["name"])
         st.session_state.email_checked = True
+        user = st.session_state.user
     if st.button("Logout"):
         st.logout()
         st.rerun()
 else:
     if st.button("Authenticate"):
         st.login("google")
+        st.session_state.email_checked = True
+        user = st.session_state.user
 
     # col_space, col_buttons = st.columns([10, 2]) 
     # with col_buttons:
