@@ -15,6 +15,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 if st.user.is_logged_in:    
     if st.button("Logout"):
         st.logout()
+        st.rerun()
     user = get_user_by_email(st.user.email)
     if user:
         st.session_state.user = user
