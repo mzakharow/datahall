@@ -31,7 +31,7 @@ else:
     user = get_user_by_email(st.user.email)
     if user:
         st.session_state.user = user
-        st.success(st.email)
+        st.success(st.user.email)
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
