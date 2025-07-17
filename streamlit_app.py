@@ -14,9 +14,9 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if st.user.is_logged_in:    
     st.logout()
-else:
-    if st.button("Authenticate"):
-        st.login("google")
+# else:
+#     if st.button("Authenticate"):
+#         st.login("google")
 
     # col_space, col_buttons = st.columns([10, 2]) 
     # with col_buttons:
