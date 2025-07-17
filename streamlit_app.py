@@ -20,6 +20,7 @@ if st.user.is_logged_in:
     if user:
         st.session_state.user = user
         st.success(user["name"])
+        st.session_state.email_checked = True
 else:
     if st.button("Authenticate"):
         st.login("google")
