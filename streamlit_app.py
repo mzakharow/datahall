@@ -15,8 +15,23 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 if not st.experimental_user.is_logged_in:    
     if st.button("Authenticate"):
         st.login("google")
+
+    col_space, col_buttons = st.columns([10, 2]) 
+    with col_buttons:
+        col_login, col_register = st.columns([1, 1])
+        with col_login:
+            if st.button("🔐 Login"):
+                st.session_state.show_login = not st.session_state.show_login
+                st.session_state.show_register = False
+        with col_register:
+            if st.button("📝 Register"):
+                st.session_state.show_register = not st.session_state.show_register
+                st.session_state.show_login = False
 else:
-    st.success(st.experimental_user.email)
+    user = get_user_by_email(st.experimental_user.email)
+    if user:
+        st.session_state.user = user
+        st.success(st.experimental_user.email)
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
@@ -61,7 +76,7 @@ if not user:
     #         st.session_state.show_register = not st.session_state.show_register
     #         st.session_state.show_login = False
 
-    col_space, col_buttons = st.columns([10, 2])  # подогнать ширину под нужды
+    col_space, col_buttons = st.columns([10, 2]) 
     with col_buttons:
         col_login, col_register = st.columns([1, 1])
         with col_login:
