@@ -52,7 +52,7 @@ def run():
                 LEFT JOIN locations loc ON task.location_id = loc.id
                 LEFT JOIN activities act ON task.activity_id = act.id
                 LEFT JOIN cable_type ct ON task.cable_type_id = ct.id
-                LEFT JOIN racks r ON task.rack_id = rack.id
+                LEFT JOIN racks r ON task.rack_id = r.id
                 WHERE tech.activ = true
                 ORDER BY tech.name
             """
