@@ -33,8 +33,6 @@ def run():
                     loc.name AS location,
                     act.name AS activity,
                     ct.name AS cable_type,
-                    task.quantity,
-                    task.percent,
                     task.rack,
                     COALESCE(src.name, '—') AS created_by,
                     task.timestamp
@@ -65,8 +63,6 @@ def run():
                     l.name AS location,
                     a.name AS activity,
                     ct.name AS cable_type,
-                    task.quantity,
-                    task.percent,
                     task.rack,
                     COALESCE(src.name, '—') AS created_by,
                     task.timestamp
