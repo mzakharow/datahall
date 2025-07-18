@@ -34,7 +34,7 @@ def run():
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
-        team_leads = conn.execute(text("SELECT id FROM technicians WHERE is_teamlead = True")).fetchone()
+        team_leads = conn.execute(text("SELECT id, name FROM technicians WHERE is_teamlead = True")).fetchone()
         # team_lead_name = result.name if result else "-"
 
     if not technicians:
@@ -78,7 +78,7 @@ def run():
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
-        "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == latest_tasks.get(tech.id, {}).get("technician_id")), list(act_options.keys())[0]),
+        "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
         "Time": latest_tasks.get(tech.id, {}).get("timestamp", "").astimezone(ZoneInfo(LOCAL_TIMEZONE)).strftime("%H:%M") if latest_tasks.get(tech.id, {}).get("timestamp") else ""
