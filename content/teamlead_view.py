@@ -20,17 +20,19 @@ def run():
     with engine.connect() as conn:
         if show_all:
             technicians = conn.execute(text("""
-                SELECT t1.id, t.name, tl.name AS team_lead_name
-                FROM technicians t
-                LEFT JOIN technicians tl ON t.team_lead = tl.id
-                WHERE t.activ = true
-                ORDER BY t.name
+                SELECT t1.id, t1.name, t2.name AS team_lead_name
+                FROM technicians t1
+                LEFT JOIN technicians t2 ON t1.team_lead = t2.id
+                WHERE t1.activ = true
+                ORDER BY t1.name
             """)).fetchall()
         else:
             technicians = conn.execute(text("""
-                SELECT id, name FROM technicians
-                WHERE team_lead = :tl_id AND activ = true
-                ORDER BY name
+                SELECT t1.id, t1.name, t2.name AS team_lead_name
+                FROM technicians t1
+                LEFT JOIN technicians t2 ON t1.team_lead = t2.id
+                WHERE t1.team_lead = :tl_id AND t1.activ = true
+                ORDER BY t1.name
             """), {"tl_id": team_lead_id}).fetchall()
 
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
@@ -38,8 +40,9 @@ def run():
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
         # team_leads = conn.execute(text("SELECT id, name FROM technicians WHERE is_teamlead = True")).fetchone()
 
-        result = conn.execute(text("SELECT name FROM technicians WHERE id = :id"), {"id": team_lead_id}).fetchone()
-        team_lead_name = result.name if result else "-"
+        tech_options = {tech.name: tech.id for tech in technicians}
+        tech_ids = [tech.id for tech in technicians]
+        tech_id_to_teamlead = {tech.id: tech.team_lead_name for tech in technicians}
         # team_lead_name = result.name if result else "-"
 
     if not technicians:
@@ -88,7 +91,7 @@ def run():
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
         
-        "Team lead": tech_id_to_teamlead.get(tech.id, "-") if show_all else "-",
+        "Team lead": tech_id_to_teamlead.get(tech.id, "Unknown"),
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
