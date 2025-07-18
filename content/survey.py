@@ -115,18 +115,22 @@ def run():
             locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name")).fetchall()
             activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
             cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name")).fetchall()
+            racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name")).fetchall()
 
         loc_options = {loc.name: loc.id for loc in locations}
         act_options = {act.name: act.id for act in activities}
         cable_options = {ct.name: ct.id for ct in cable_types}
+        racks_options = {f"{rack.name} ({rack.dh})": rack.id for rack in racks}
 
         act_id_to_name = {v: k for k, v in act_options.items()}
         cable_id_to_name = {v: k for k, v in cable_options.items()}
+        rack_id_to_name = {v: k for k, v in rack_options.items()}
 
         default_loc = next((name for name, id_ in loc_options.items()
                             if id_ == st.session_state.get("last_location_id")), None)
         default_act = act_id_to_name.get(st.session_state.get("last_activity_id"))
         default_cable = cable_id_to_name.get(st.session_state.get("last_cable_type_id"))
+        default_rack = rack_id_to_name.get(st.session_state.get("last_rack_id"))
 
         selected_location = st.selectbox("Select location", list(loc_options.keys()),
             index=list(loc_options.keys()).index(default_loc) if default_loc in loc_options else 0)
@@ -137,7 +141,9 @@ def run():
         selected_cable = st.selectbox("Select cable type", list(cable_options.keys()),
             index=list(cable_options.keys()).index(default_cable) if default_cable in cable_options else 0)
 
-        rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
+        # rack_input = st.text_input("Rack", value=st.session_state.get("last_rack", "")).strip()[:5]
+        selected_rack = st.selectbox("Select rack", list(racks_options.keys()),
+            index=list(racks_options.keys()).index(default_cable) if default_cable in racks_options else 0)
 
         if st.button("Confirm"):
             confirmed_email = st.session_state.user_data["email"].strip().lower()
@@ -151,15 +157,15 @@ def run():
                 with engine.begin() as conn:
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
-                            technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
+                            technician_id, location_id, activity_id, cable_type_id, rack_id, source, timestamp
                         )
-                        VALUES (:technician_id, :location_id, :activity_id, :cable_type_id, :rack, :source, :timestamp)
+                        VALUES (:technician_id, :location_id, :activity_id, :cable_type_id, :rack_id, :source, :timestamp)
                     """), {
                         "technician_id": user["id"],
                         "location_id": loc_options[selected_location],
                         "activity_id": act_options[selected_activity],
                         "cable_type_id": cable_options[selected_cable],
-                        "rack": rack_input,
+                        "rack_id": racks_options[selected_rack],
                         "source": user["id"],
                         "timestamp": now
                     })
