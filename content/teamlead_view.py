@@ -34,6 +34,8 @@ def run():
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
+        result = conn.execute(text("SELECT name FROM technicians WHERE id = :id"), {"id": team_lead_id}).fetchone()
+        team_lead_name = result.name if result else "-"
 
     if not technicians:
         st.info("You don't have a team.")
@@ -76,6 +78,7 @@ def run():
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
+        "Team Lead": team_lead_name,
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
         "Time": latest_tasks.get(tech.id, {}).get("timestamp", "").astimezone(ZoneInfo(LOCAL_TIMEZONE)).strftime("%H:%M") if latest_tasks.get(tech.id, {}).get("timestamp") else ""
