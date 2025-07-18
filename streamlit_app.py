@@ -190,7 +190,8 @@ else:
     if is_admin(user):
         options.append("Settings")
         options.append("Reports")
-    options.append("Logout")
+        options.append("Sources")
+    # options.append("Logout")
 
     page = st.sidebar.radio("Navigation", options)
 
