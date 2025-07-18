@@ -40,7 +40,7 @@ def run():
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
         # racks = conn.execute(text("SELECT id, name FROM raks ORDER BY name NULLS FIRST")).fetchall()
         # team_leads = conn.execute(text("SELECT id, name FROM technicians WHERE is_teamlead = True")).fetchone()
-        racks = conn.execute(text("SELECT id, name FROM racks ORDER BY name NULLS FIRST")).fetchall()
+        racks = conn.execute(text("SELECT id, name + ' ' (dh) as name FROM racks ORDER BY name NULLS FIRST")).fetchall()
 
         tech_options = {tech.name: tech.id for tech in technicians}
         tech_ids = [tech.id for tech in technicians]
