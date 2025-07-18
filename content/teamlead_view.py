@@ -40,7 +40,7 @@ def run():
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
         # racks = conn.execute(text("SELECT id, name FROM raks ORDER BY name NULLS FIRST")).fetchall()
         # team_leads = conn.execute(text("SELECT id, name FROM technicians WHERE is_teamlead = True")).fetchone()
-        racks = conn.execute(text("SELECT id, name + ' ' (dh) as name FROM racks ORDER BY name NULLS FIRST")).fetchall()
+        racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name NULLS FIRST")).fetchall()
 
         tech_options = {tech.name: tech.id for tech in technicians}
         tech_ids = [tech.id for tech in technicians]
@@ -92,7 +92,8 @@ def run():
         "Location": next((loc.name for loc in locations if loc.id == latest_tasks.get(tech.id, {}).get("location_id")), list(loc_options.keys())[0]),
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
-        "Rack": next((rack.name for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
+        # "Rack": next((rack.name for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
+        "Rack": next((f"{rack.name} ({rack.dh})" for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
         
         "Team lead": tech_id_to_teamlead.get(tech.id, "Unknown"),
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
