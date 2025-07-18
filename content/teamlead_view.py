@@ -57,7 +57,7 @@ def run():
     cable_id_to_name = {ct.id: ct.name for ct in cable_types}
     # tech_options = {tech.name: tech.id for tech in technicians}
     # tech_ids = [tech.id for tech in technicians]
-    racks_options = {rack.name: rack.id for rack in racks}
+    racks_options = {f"{rack.name} ({rack.dh})": rack.id for rack in racks}
 
     tech_options = {tech.name: tech.id for tech in technicians}
     tech_ids = [tech.id for tech in technicians]
