@@ -34,7 +34,7 @@ def run():
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
-        team_leads = conn.execute(text("SELECT name FROM technicians WHERE is_teamlead = True")).fetchone()
+        team_leads = conn.execute(text("SELECT id FROM technicians WHERE is_teamlead = True")).fetchone()
         # team_lead_name = result.name if result else "-"
 
     if not technicians:
