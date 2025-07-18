@@ -34,8 +34,8 @@ def run():
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
-        result = conn.execute(text("SELECT name FROM technicians WHERE id = :id"), {"id": team_lead_id}).fetchone()
-        team_lead_name = result.name if result else "-"
+        team_leads = conn.execute(text("SELECT name FROM technicians WHERE is_teamlead = True")).fetchone()
+        # team_lead_name = result.name if result else "-"
 
     if not technicians:
         st.info("You don't have a team.")
@@ -78,7 +78,7 @@ def run():
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
-        "Team lead": team_lead_name,
+        "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == latest_tasks.get(tech.id, {}).get("technician_id")), list(act_options.keys())[0]),
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
         "Time": latest_tasks.get(tech.id, {}).get("timestamp", "").astimezone(ZoneInfo(LOCAL_TIMEZONE)).strftime("%H:%M") if latest_tasks.get(tech.id, {}).get("timestamp") else ""
@@ -98,7 +98,7 @@ def run():
                 "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
                 "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
                 "Rack": st.column_config.TextColumn("Rack", max_chars=5),
-                "Team lead": st.column_config.SelectboxColumn("Team lead", options=list(team_lead_name.keys())),
+                "Team lead": st.column_config.SelectboxColumn("Team lead", options=list(team_leads.keys())),
                 # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
                 # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
             }
