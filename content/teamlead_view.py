@@ -52,7 +52,7 @@ def run():
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT technician_id, location_id, activity_id, cable_type_id, rack, quantity, percent, timestamp
+            SELECT technician_id, location_id, activity_id, cable_type_id, rack, timestamp
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
@@ -76,8 +76,8 @@ def run():
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
-        "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
-        "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
+        # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
+        # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
         "Time": latest_tasks.get(tech.id, {}).get("timestamp", "").astimezone(ZoneInfo(LOCAL_TIMEZONE)).strftime("%H:%M") if latest_tasks.get(tech.id, {}).get("timestamp") else ""
     } for i, tech in enumerate(technicians)])
 
@@ -95,8 +95,8 @@ def run():
                 "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
                 "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
                 "Rack": st.column_config.TextColumn("Rack", max_chars=5),
-                "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
-                "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
+                # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
+                # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
             }
         )
         submitted = st.form_submit_button("📂 Save tasks")
@@ -111,8 +111,8 @@ def run():
                     row["Activity"] == original["Activity"] and
                     row["Cable Type"] == original["Cable Type"] and
                     str(row["Rack"]).strip() == str(original["Rack"]).strip() and
-                    int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
-                    int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
+                    # int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
+                    # int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
                 ):
                     continue
 
@@ -122,17 +122,17 @@ def run():
                 act_id = act_options.get(row["Activity"])
                 cable_id = cable_options.get(row["Cable Type"])
                 rack = str(row.get("Rack", "")).strip()[:5]
-                quantity = max(0, int(row.get("Quantity", 0)))
-                percent = min(100, max(0, int(row.get("Percent", 0))))
+                # quantity = max(0, int(row.get("Quantity", 0)))
+                # percent = min(100, max(0, int(row.get("Percent", 0))))
 
                 if tech_id and loc_id:
                     if not act_id:
                         act_id = None
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
-                            technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp, quantity, percent
+                            technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
                         )
-                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack, :source, :timestamp, :quantity, :percent)
+                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack, :source, :timestamp)
                     """), {
                         "tech_id": tech_id,
                         "loc_id": loc_id,
@@ -140,9 +140,9 @@ def run():
                         "cable_type_id": cable_id,
                         "rack": rack,
                         "source": team_lead_id,
-                        "timestamp": datetime.now(),
-                        "quantity": quantity,
-                        "percent": percent
+                        "timestamp": datetime.now()
+                        # "quantity": quantity,
+                        # "percent": percent
                     })
 
         st.success("✅ Changes saved!")
