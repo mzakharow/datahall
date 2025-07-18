@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta, timezone
-from content import survey, teamlead_view, settings, reports
+from content import survey, teamlead_view, settings, reports, sources
 from auth import get_user_by_email, register_user, is_team_lead, is_admin, hash_password, check_password, generate_token, save_token, get_user_by_token
 
 st.set_page_config(page_title="Survey",  page_icon="✅", layout="wide", initial_sidebar_state="expanded")
@@ -201,9 +201,11 @@ else:
     elif page == "Settings":
         settings.run()
     elif page == "Reports":
-        reports.run()    
-    elif page == "Logout":
-        st.session_state.user = None
-        st.success("Logged out.")
-        st.logout()
-        st.rerun()
+        reports.run() 
+    elif page == "Sources":
+        sources.run()
+    # elif page == "Logout":
+    #     st.session_state.user = None
+    #     st.success("Logged out.")
+    #     st.logout()
+    #     st.rerun()
