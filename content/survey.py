@@ -124,7 +124,7 @@ def run():
 
         act_id_to_name = {v: k for k, v in act_options.items()}
         cable_id_to_name = {v: k for k, v in cable_options.items()}
-        rack_id_to_name = {v: k for k, v in rack_options.items()}
+        rack_id_to_name = {v: k for k, v in racks_options.items()}
 
         default_loc = next((name for name, id_ in loc_options.items()
                             if id_ == st.session_state.get("last_location_id")), None)
