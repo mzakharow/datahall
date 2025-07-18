@@ -33,7 +33,7 @@ def run():
                     loc.name AS location,
                     act.name AS activity,
                     ct.name AS cable_type,
-                    task.rack,
+                    r.name AS rack,
                     COALESCE(src.name, '—') AS created_by,
                     task.timestamp
                 FROM technicians tech
@@ -52,6 +52,7 @@ def run():
                 LEFT JOIN locations loc ON task.location_id = loc.id
                 LEFT JOIN activities act ON task.activity_id = act.id
                 LEFT JOIN cable_type ct ON task.cable_type_id = ct.id
+                LEFT JOIN racks r ON task.rack_id = rack.id
                 WHERE tech.activ = true
                 ORDER BY tech.name
             """
@@ -63,7 +64,7 @@ def run():
                     l.name AS location,
                     a.name AS activity,
                     ct.name AS cable_type,
-                    task.rack,
+                    r.name,
                     COALESCE(src.name, '—') AS created_by,
                     task.timestamp
                 FROM technician_tasks task
@@ -73,6 +74,7 @@ def run():
                 LEFT JOIN locations l ON task.location_id = l.id
                 LEFT JOIN activities a ON task.activity_id = a.id
                 LEFT JOIN cable_type ct ON task.cable_type_id = ct.id
+                LEFT JOIN racks r ON task.rack_id = r.id
                 WHERE DATE(task.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') = :selected_date
                 ORDER BY task.timestamp DESC
             """
