@@ -94,7 +94,7 @@ def run():
                 "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
                 "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
                 "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
-                "Rack": st.column_config.TextColumn("Rack", max_chars=5),
+                "Rack": st.column_config.TextColumn("Rack", max_chars=5)
                 # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
                 # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
             }
@@ -110,8 +110,8 @@ def run():
                     row["Location"] == original["Location"] and
                     row["Activity"] == original["Activity"] and
                     row["Cable Type"] == original["Cable Type"] and
-                    str(row["Rack"]).strip() == str(original["Rack"]).strip() and
-                    # int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
+                    str(row["Rack"]).strip() == str(original["Rack"]).strip() 
+                    # and int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
                     # int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
                 ):
                     continue
