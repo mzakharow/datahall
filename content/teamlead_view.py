@@ -38,7 +38,9 @@ def run():
         locations = conn.execute(text("SELECT id, name FROM locations ORDER BY name NULLS FIRST")).fetchall()
         activities = conn.execute(text("SELECT id, name FROM activities ORDER BY name NULLS FIRST")).fetchall()
         cable_types = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name NULLS FIRST")).fetchall()
+        # racks = conn.execute(text("SELECT id, name FROM raks ORDER BY name NULLS FIRST")).fetchall()
         # team_leads = conn.execute(text("SELECT id, name FROM technicians WHERE is_teamlead = True")).fetchone()
+        racks = conn.execute(text("SELECT id, name FROM racks ORDER BY name NULLS FIRST")).fetchall()
 
         tech_options = {tech.name: tech.id for tech in technicians}
         tech_ids = [tech.id for tech in technicians]
@@ -53,8 +55,9 @@ def run():
     act_options = {act.name: act.id for act in activities}
     cable_options = {ct.name: ct.id for ct in cable_types}
     cable_id_to_name = {ct.id: ct.name for ct in cable_types}
-    tech_options = {tech.name: tech.id for tech in technicians}
-    tech_ids = [tech.id for tech in technicians]
+    # tech_options = {tech.name: tech.id for tech in technicians}
+    # tech_ids = [tech.id for tech in technicians]
+    racks_options = {rack.name: rack.id for rack in racks}
 
     tech_options = {tech.name: tech.id for tech in technicians}
     tech_ids = [tech.id for tech in technicians]
@@ -66,7 +69,7 @@ def run():
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT technician_id, location_id, activity_id, cable_type_id, rack, timestamp
+            SELECT technician_id, location_id, activity_id, cable_type_id, rack_id, timestamp
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
@@ -89,7 +92,7 @@ def run():
         "Location": next((loc.name for loc in locations if loc.id == latest_tasks.get(tech.id, {}).get("location_id")), list(loc_options.keys())[0]),
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
-        "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
+        "Rack": next((rack.name for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), list(racks_options.keys())[0]),
         
         "Team lead": tech_id_to_teamlead.get(tech.id, "Unknown"),
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
@@ -111,7 +114,7 @@ def run():
                 "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
                 "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
                 "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
-                "Rack": st.column_config.TextColumn("Rack", max_chars=5)
+                "Rack": st.column_config.SelectboxColumn("Rack", options=list(racks_options.keys())),
                 # "Team lead": st.column_config.SelectboxColumn("Team lead", options=list(team_leads.keys())),
                 # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
                 # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
@@ -128,7 +131,7 @@ def run():
                     row["Location"] == original["Location"] and
                     row["Activity"] == original["Activity"] and
                     row["Cable Type"] == original["Cable Type"] and
-                    str(row["Rack"]).strip() == str(original["Rack"]).strip() 
+                    row["Rack"] == original["Rack"]
                     # and int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
                     # int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
                 ):
@@ -139,7 +142,7 @@ def run():
                 loc_id = loc_options.get(row["Location"])
                 act_id = act_options.get(row["Activity"])
                 cable_id = cable_options.get(row["Cable Type"])
-                rack = str(row.get("Rack", "")).strip()[:5]
+                rack_id = racks_options.get(row["Rack"])
                 # quantity = max(0, int(row.get("Quantity", 0)))
                 # percent = min(100, max(0, int(row.get("Percent", 0))))
 
@@ -148,15 +151,15 @@ def run():
                         act_id = None
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
-                            technician_id, location_id, activity_id, cable_type_id, rack, source, timestamp
+                            technician_id, location_id, activity_id, cable_type_id, rack_id, source, timestamp
                         )
-                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack, :source, :timestamp)
+                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack_id, :source, :timestamp)
                     """), {
                         "tech_id": tech_id,
                         "loc_id": loc_id,
                         "act_id": act_id,
                         "cable_type_id": cable_id,
-                        "rack": rack,
+                        "rack_id": rack_id,
                         "source": team_lead_id,
                         "timestamp": datetime.now()
                         # "quantity": quantity,
