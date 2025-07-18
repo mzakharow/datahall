@@ -20,9 +20,11 @@ def run():
     with engine.connect() as conn:
         if show_all:
             technicians = conn.execute(text("""
-                SELECT id, name FROM technicians
-                WHERE activ = true
-                ORDER BY name
+                SELECT t1.id, t.name, tl.name AS team_lead_name
+                FROM technicians t
+                LEFT JOIN technicians tl ON t.team_lead = tl.id
+                WHERE t.activ = true
+                ORDER BY t.name
             """)).fetchall()
         else:
             technicians = conn.execute(text("""
@@ -50,6 +52,10 @@ def run():
     cable_id_to_name = {ct.id: ct.name for ct in cable_types}
     tech_options = {tech.name: tech.id for tech in technicians}
     tech_ids = [tech.id for tech in technicians]
+
+    tech_options = {tech.name: tech.id for tech in technicians}
+    tech_ids = [tech.id for tech in technicians]
+    tech_id_to_teamlead = {tech.id: tech.team_lead_name for tech in technicians}
 
     LOCAL_TIMEZONE = "America/Chicago"
     today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
@@ -81,7 +87,8 @@ def run():
         "Activity": next((act.name for act in activities if act.id == latest_tasks.get(tech.id, {}).get("activity_id")), list(act_options.keys())[0]),
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         "Rack": latest_tasks.get(tech.id, {}).get("rack", ""),
-        "Team lead": team_lead_name,
+        if show_all:
+            "Team lead": tech_id_to_teamlead.get(tech.id, "Unknown"),
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
