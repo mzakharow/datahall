@@ -101,8 +101,8 @@ def run():
                 "Location": st.column_config.SelectboxColumn("Location", options=list(loc_options.keys())),
                 "Activity": st.column_config.SelectboxColumn("Activity", options=list(act_options.keys())),
                 "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys())),
-                "Rack": st.column_config.TextColumn("Rack", max_chars=5),
-                "Team lead": st.column_config.SelectboxColumn("Team lead", options=list(team_leads.keys())),
+                "Rack": st.column_config.TextColumn("Rack", max_chars=5)
+                # "Team lead": st.column_config.SelectboxColumn("Team lead", options=list(team_leads.keys())),
                 # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
                 # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
             }
