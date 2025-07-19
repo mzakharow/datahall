@@ -126,7 +126,17 @@ def run():
                     rs.quantity,
                     rs.percent,
                     t.name AS created_by,
-                    rs.created_at
+                    rs.created_at,
+    
+                    (
+                        SELECT STRING_AGG(tt_tech.name, ', ')
+                        FROM technician_tasks tt
+                        JOIN technicians tt_tech ON tt.technician_id = tt_tech.id
+                        WHERE tt.rack_id = r.id
+                          AND tt.activity_id = rs.activity_id
+                          AND tt.cable_type_id = rs.cable_type_id
+                    ) AS technicians
+
                 FROM racks r
                 LEFT JOIN (
                     SELECT DISTINCT ON (rack_id, position, activity_id, cable_type_id)
@@ -134,10 +144,12 @@ def run():
                     FROM rack_states
                     ORDER BY rack_id, position, activity_id, cable_type_id, status_id, created_at DESC
                 ) rs ON rs.rack_id = r.id
+
                 LEFT JOIN activities a ON rs.activity_id = a.id
                 LEFT JOIN cable_type ct ON rs.cable_type_id = ct.id
                 LEFT JOIN statuses s ON rs.status_id = s.id
                 LEFT JOIN technicians t ON rs.created_by = t.id
+
                 WHERE r.dh = :selected_dh
                 ORDER BY r.name, rs.created_at DESC NULLS LAST;
             """), {"selected_dh": selected_dh})
