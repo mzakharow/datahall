@@ -16,7 +16,7 @@ def run():
     if existing_racks:
         st.table([dict(row._mapping) for row in existing_racks])
     else:
-        #st.info("No racks found.")
+        st.info("No racks found.")
 
     st.markdown("---")
     st.subheader("➕ Add New Rack")
