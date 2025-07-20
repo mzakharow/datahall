@@ -169,3 +169,55 @@ def run():
                 st.dataframe(df, use_container_width=True)
             else:
                 st.info("No data for selected DH.")
+
+    # LOCAL_TIMEZONE = "America/Chicago"
+    # today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
+    selected_date = st.date_input("📅 Select date", value=today_local)
+
+    # engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT
+                r.name AS rack_name,
+                r.dh,
+                rs.position,
+                a.name AS activity,
+                ct.name AS cable_type,
+                s.name AS status,
+                rs.quantity,
+                rs.percent,
+                tech.name AS technician,
+                u.name AS created_by,
+                rs.created_at
+            FROM rack_states rs
+            JOIN racks r ON r.id = rs.rack_id
+            LEFT JOIN activities a ON a.id = rs.activity_id
+            LEFT JOIN cable_type ct ON ct.id = rs.cable_type_id
+            LEFT JOIN statuses s ON s.id = rs.status_id
+            LEFT JOIN technician_tasks tt 
+                ON tt.rack_id = rs.rack_id 
+                AND DATE(tt.timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :selected_date
+            LEFT JOIN technicians tech ON tech.id = tt.technician_id
+            LEFT JOIN technicians u ON u.id = rs.created_by
+            WHERE DATE(rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :selected_date
+            ORDER BY rs.created_at DESC
+        """), {
+            "selected_date": selected_date,
+            "tz": LOCAL_TIMEZONE
+        }).fetchall()
+
+    if not rows:
+        st.info("No records found for the selected date.")
+        return
+
+    df = pd.DataFrame([dict(row._mapping) for row in rows])
+
+    with st.expander("🔍 Filters"):
+        for col in ["rack_name", "created_by"]:
+            if col in df.columns:
+                options = df[col].dropna().unique().tolist()
+                selected = st.multiselect(f"Filter by {col.replace('_', ' ').title()}", options, key=f"filter_{col}")
+                if selected:
+                    df = df[df[col].isin(selected)]
+
+    st.dataframe(df, use_container_width=True)
