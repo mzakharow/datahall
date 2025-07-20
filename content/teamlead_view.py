@@ -69,7 +69,7 @@ def run():
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT technician_id, location_id, activity_id, cable_type_id, rack_id, timestamp, source
+            SELECT sub.technician_id, sub.location_id, sub.activity_id, sub.cable_type_id, rsub.ack_id, sub.timestamp, u.name AS created_by_name
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
@@ -77,6 +77,7 @@ def run():
                 WHERE technician_id = ANY(:tech_ids)
                   AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :today
             ) sub
+            LEFT JOIN technicians u ON u.id = sub.created_by
             WHERE rn = 1"""), {
             "tech_ids": tech_ids,
             "today": today_local,
@@ -96,7 +97,7 @@ def run():
         "Rack": next((f"{rack.name} ({rack.dh})" for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
         
         "Team lead": tech_id_to_teamlead.get(tech.id, "-"),
-        "source": latest_tasks.source,
+        "Created by": latest_tasks.get(tech.id, {}).get("created_by", "-"),
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
