@@ -69,7 +69,7 @@ def run():
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT sub.technician_id, sub.location_id, sub.activity_id, sub.cable_type_id, sub.rack_id, sub.timestamp, u.name AS created_by_name
+            SELECT sub.technician_id, sub.location_id, sub.activity_id, sub.cable_type_id, sub.rack_id, sub.timestamp, u.name AS created_by
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
