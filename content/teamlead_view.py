@@ -95,7 +95,8 @@ def run():
         # "Rack": next((rack.name for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
         "Rack": next((f"{rack.name} ({rack.dh})" for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
         
-        "Team lead": tech_id_to_teamlead.get(tech.id, "Unknown"),
+        "Team lead": tech_id_to_teamlead.get(tech.id, "-"),
+        "source": latest_tasks.source,
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
