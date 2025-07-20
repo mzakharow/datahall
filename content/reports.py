@@ -213,11 +213,16 @@ def run():
     df = pd.DataFrame([dict(row._mapping) for row in rows])
 
     with st.expander("🔍 Filters"):
-        for col in ["rack_name", "created_by"]:
-            if col in df.columns:
-                options = df[col].dropna().unique().tolist()
-                selected = st.multiselect(f"Filter by {col.replace('_', ' ').title()}", options, key=f"filter_{col}")
-                if selected:
-                    df = df[df[col].isin(selected)]
+        if "rack_name" in df.columns:
+            rack_options = df["rack_name"].dropna().unique().tolist()
+            selected_racks = st.multiselect("Filter by Rack", rack_options, key="filter_by_rack_name")
+            if selected_racks:
+                df = df[df["rack_name"].isin(selected_racks)]
+
+        if "created_by" in df.columns:
+            created_by_options = df["created_by"].dropna().unique().tolist()
+            selected_creators = st.multiselect("Filter by Created By", created_by_options, key="filter_by_created_by")
+            if selected_creators:
+                df = df[df["created_by"].isin(selected_creators)]
 
     st.dataframe(df, use_container_width=True)
