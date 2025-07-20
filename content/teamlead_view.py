@@ -77,7 +77,7 @@ def run():
                 WHERE technician_id = ANY(:tech_ids)
                   AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :today
             ) sub
-            LEFT JOIN technicians u ON u.id = sub.created_by
+            LEFT JOIN technicians u ON u.id = sub.source
             WHERE rn = 1"""), {
             "tech_ids": tech_ids,
             "today": today_local,
