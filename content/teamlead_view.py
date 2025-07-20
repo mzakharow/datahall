@@ -183,7 +183,7 @@ def run():
     activity_options = {a.name: a.id for a in activities}
     cable_type_options = {c.name: c.id for c in cable_types}
     status_options = {s.name: s.id for s in statuses}
-    positions = {"Left": "left", "Right": "right"}
+    positions = {"Varies": "varies", "Left": "left", "Right": "right"}
 
     with st.form("rack_task_form"):
         col1, col2 = st.columns(2)
