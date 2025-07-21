@@ -199,8 +199,8 @@ def run():
             LEFT JOIN statuses s ON s.id = rs.status_id
             LEFT JOIN technician_tasks tt 
                 ON tt.rack_id = rs.rack_id 
-                AND tt.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz >= :start_datetime
-                      AND tt.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz < :end_datetime
+                AND tt.timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz >= :start_datetime
+                      AND tt.timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz < :end_datetime
             LEFT JOIN technicians tech ON tech.id = tt.technician_id
             LEFT JOIN technicians u ON u.id = rs.created_by
             WHERE rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz >= :start_datetime
