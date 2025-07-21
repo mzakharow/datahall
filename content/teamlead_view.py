@@ -177,6 +177,24 @@ def run():
                         # "percent": percent
                     })
 
+                    if rack_id is not None and activity_id is not None:
+                        conn.execute(text("""
+                            INSERT INTO rack_states (
+                                rack_id, activity_id, cable_type_id, created_by, position, created_at, status_id
+                        )
+                        VALUES (:rack_id, :act_id, :cable_type_id, :created_by, :position, :created_at, :status_id)
+                        """), {
+                        "act_id": act_id,
+                        "cable_type_id": cable_id,
+                         "rack_id": rack_id,
+                         "created_by": team_lead_id,
+                         "position": position,
+                         "created_at": datetime_now,
+                         "status_id": status_id
+                         })
+                    else:
+                        continue
+                        #st.warning("Rack and cable type must be select
                     
 
         st.success("✅ Changes saved!")
