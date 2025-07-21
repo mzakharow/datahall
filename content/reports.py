@@ -191,7 +191,14 @@ def run():
                 s.name AS status,
                 rs.quantity,
                 rs.percent,
-                tech.name AS technician,
+                (
+                    SELECT STRING_AGG(DISTINCT t2.name, ', ')
+                    FROM technician_tasks tt2
+                    JOIN technicians t2 ON t2.id = tt2.technician_id
+                    WHERE tt2.rack_id = rs.rack_id
+                      AND tt2.activity_id = rs.activity_id
+                      AND tt2.cable_type_id = rs.cable_type_id
+                ) AS technicians,
                 u.name AS created_by,
                 rs.created_at
             FROM rack_states rs
@@ -199,9 +206,6 @@ def run():
             LEFT JOIN activities a ON a.id = rs.activity_id
             LEFT JOIN cable_type ct ON ct.id = rs.cable_type_id
             LEFT JOIN statuses s ON s.id = rs.status_id
-            LEFT JOIN technician_tasks tt 
-                ON tt.rack_id = rs.rack_id 
-            LEFT JOIN technicians tech ON tech.id = tt.technician_id
             LEFT JOIN technicians u ON u.id = rs.created_by
             WHERE rs.created_at >= :start_datetime
               AND rs.created_at < :end_datetime
