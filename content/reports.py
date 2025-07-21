@@ -23,6 +23,9 @@ def run():
     selected_date = st.date_input("Select date", value=today_local)
     show_latest_only = st.checkbox("Show current tasks only (1 per tech)", value=True)
 
+    start_datetime = datetime.combine(selected_date, time.min).replace(tzinfo=ZoneInfo(LOCAL_TIMEZONE))
+    end_datetime = start_datetime + timedelta(days=1)
+
     with engine.connect() as conn:
         if show_latest_only:
             query = """
@@ -196,14 +199,18 @@ def run():
             LEFT JOIN statuses s ON s.id = rs.status_id
             LEFT JOIN technician_tasks tt 
                 ON tt.rack_id = rs.rack_id 
-                AND DATE(tt.timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :selected_date
+                AND tt.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz >= :start_datetime
+                      AND tt.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz < :end_datetime
             LEFT JOIN technicians tech ON tech.id = tt.technician_id
             LEFT JOIN technicians u ON u.id = rs.created_by
-            WHERE DATE(rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :selected_date
+            WHERE rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz >= :start_datetime
+              AND rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz < :end_datetime
             ORDER BY rs.created_at DESC
         """), {
             "selected_date": selected_date,
-            "tz": LOCAL_TIMEZONE
+            "tz": LOCAL_TIMEZONE,
+            "start_datetime": start_datetime,
+            "end_datetime": end_datetime
         }).fetchall()
 
     if not rows:
