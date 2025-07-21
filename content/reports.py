@@ -176,6 +176,8 @@ def run():
     # LOCAL_TIMEZONE = "America/Chicago"
     # today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
     selected_date = st.date_input("📅 Select date", value=today_local)
+    start_datetime = datetime.combine(selected_date, time.min).replace(tzinfo=ZoneInfo(LOCAL_TIMEZONE))
+    end_datetime = start_datetime + timedelta(days=1)
 
     # engine = get_engine()
     with engine.connect() as conn:
