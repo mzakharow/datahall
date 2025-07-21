@@ -132,7 +132,7 @@ def run():
                     rs.created_at,
     
                     (
-                        SELECT STRING_AGG(tt_tech.name, ', ')
+                        SELECT STRING_AGG(DISTINCT tt_tech.name, ', ')
                         FROM technician_tasks tt
                         JOIN technicians tt_tech ON tt.technician_id = tt_tech.id
                         WHERE tt.rack_id = r.id
