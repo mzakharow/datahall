@@ -177,22 +177,7 @@ def run():
                         # "percent": percent
                     })
 
-                    conn.execute(text("""
-                        INSERT INTO rack_states (
-                            rack_id, activity_id, cable_type_id, created_by, position, created_at, status_id
-                        )
-                        VALUES (:rack_id, :act_id, :cable_type_id, :created_by, :position, :created_at, :status_id)
-                    """), {
-                        "act_id": act_id,
-                        "cable_type_id": cable_id,
-                        "rack_id": rack_id,
-                        "created_by": team_lead_id,
-                        "position": position,
-                        "created_at": datetime_now,
-                        "status_id": status_id
-                        # "quantity": quantity,
-                        # "percent": percent
-                    })
+                    
 
         st.success("✅ Changes saved!")
         st.rerun()
