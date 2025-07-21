@@ -201,8 +201,8 @@ def run():
                 ON tt.rack_id = rs.rack_id 
             LEFT JOIN technicians tech ON tech.id = tt.technician_id
             LEFT JOIN technicians u ON u.id = rs.created_by
-            WHERE rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz >= :start_datetime
-              AND rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz < :end_datetime
+            WHERE rs.created_at >= :start_datetime
+              AND rs.created_at < :end_datetime
             ORDER BY rs.created_at DESC
         """), {
             "selected_date": selected_date,
