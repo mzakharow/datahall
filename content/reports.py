@@ -182,7 +182,7 @@ def run():
     # engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT
+            SELECT DISTINCT ON (rs.rack_id, rs.activity_id, rs.cable_type_id, rs.position, rs.status_id)
                 r.name AS rack_name,
                 r.dh,
                 rs.position,
