@@ -17,6 +17,8 @@ def run():
     team_lead_id = user["id"]
     show_all = st.checkbox("👥 Show all technicians", value=False)
 
+    positions = {"Varies": "varies", "Left": "left", "Right": "right"}
+    
     with engine.connect() as conn:
         if show_all:
             technicians = conn.execute(text("""
@@ -69,7 +71,7 @@ def run():
     latest_tasks = {}
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT sub.technician_id, sub.location_id, sub.activity_id, sub.cable_type_id, sub.rack_id, sub.timestamp, u.name AS created_by
+            SELECT sub.technician_id, sub.location_id, sub.activity_id, sub.cable_type_id, sub.rack_id, sub.position, sub.timestamp, u.name AS created_by
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
@@ -95,7 +97,7 @@ def run():
         "Cable Type": cable_id_to_name.get(latest_tasks.get(tech.id, {}).get("cable_type_id"), list(cable_options.keys())[0]),
         # "Rack": next((rack.name for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
         "Rack": next((f"{rack.name} ({rack.dh})" for rack in racks if rack.id == latest_tasks.get(tech.id, {}).get("rack_id")), "-"),
-        
+        "Position": latest_tasks.get(tech.id, {}).get("position", "Varies"),
         "Team lead": tech_id_to_teamlead.get(tech.id, "-"),
         "Created by": latest_tasks.get(tech.id, {}).get("created_by", "-"),
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
@@ -135,6 +137,7 @@ def run():
                     row["Activity"] == original["Activity"] and
                     row["Cable Type"] == original["Cable Type"] and
                     row["Rack"] == original["Rack"]
+                    and row["Position"] == original["Position"]
                     # and int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
                     # int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
                 ):
@@ -146,6 +149,7 @@ def run():
                 act_id = act_options.get(row["Activity"])
                 cable_id = cable_options.get(row["Cable Type"])
                 rack_id = racks_options.get(row["Rack"])
+                position = row.get("Position")
                 # quantity = max(0, int(row.get("Quantity", 0)))
                 # percent = min(100, max(0, int(row.get("Percent", 0))))
 
@@ -154,9 +158,9 @@ def run():
                         act_id = None
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
-                            technician_id, location_id, activity_id, cable_type_id, rack_id, source, timestamp
+                            technician_id, location_id, activity_id, cable_type_id, rack_id, source, position, timestamp
                         )
-                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack_id, :source, :timestamp)
+                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack_id, :source, :position, :timestamp)
                     """), {
                         "tech_id": tech_id,
                         "loc_id": loc_id,
@@ -164,6 +168,7 @@ def run():
                         "cable_type_id": cable_id,
                         "rack_id": rack_id,
                         "source": team_lead_id,
+                        "position": position,
                         "timestamp": datetime.now()
                         # "quantity": quantity,
                         # "percent": percent
