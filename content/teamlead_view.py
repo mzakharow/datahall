@@ -130,6 +130,8 @@ def run():
 
     # if st.button("📂 Save tasks"):
     if submitted:
+        datetime_now = datetime.now()
+        status_id = 1 # in progress
         with engine.begin() as conn:
             for idx, row in edited_df.iterrows():
                 original = df.iloc[idx]
@@ -170,7 +172,26 @@ def run():
                         "rack_id": rack_id,
                         "source": team_lead_id,
                         "position": position,
-                        "timestamp": datetime.now()
+                        "timestamp": datetime_now
+                        # "quantity": quantity,
+                        # "percent": percent
+                    })
+
+                    conn.execute(text("""
+                        INSERT INTO rack_states (
+                            technician_id, location_id, activity_id, cable_type_id, rack_id, created_by, position, created_at, status_id
+                        )
+                        VALUES (:tech_id, :loc_id, :act_id, :cable_type_id, :rack_id, :created_by, :position, :created_at, :status_id)
+                    """), {
+                        "tech_id": tech_id,
+                        "loc_id": loc_id,
+                        "act_id": act_id,
+                        "cable_type_id": cable_id,
+                        "rack_id": rack_id,
+                        "created_by": team_lead_id,
+                        "position": position,
+                        "created_at": datetime_now,
+                        "status_id": status_id
                         # "quantity": quantity,
                         # "percent": percent
                     })
