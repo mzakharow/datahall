@@ -17,7 +17,7 @@ def run():
     team_lead_id = user["id"]
     show_all = st.checkbox("👥 Show all technicians", value=False)
 
-    positions = {"Varies": "varies", "Left": "left", "Right": "right"}
+    positions = {"varies": "varies", "left": "left", "right": "right"}
     
     with engine.connect() as conn:
         if show_all:
