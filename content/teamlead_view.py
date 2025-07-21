@@ -179,11 +179,10 @@ def run():
 
                     conn.execute(text("""
                         INSERT INTO rack_states (
-                            id, location_id, activity_id, cable_type_id, created_by, position, created_at, status_id
+                            id, activity_id, cable_type_id, created_by, position, created_at, status_id
                         )
-                        VALUES (:id, :loc_id, :act_id, :cable_type_id, :created_by, :position, :created_at, :status_id)
+                        VALUES (:id, :act_id, :cable_type_id, :created_by, :position, :created_at, :status_id)
                     """), {
-                        "loc_id": loc_id,
                         "act_id": act_id,
                         "cable_type_id": cable_id,
                         "id": rack_id,
