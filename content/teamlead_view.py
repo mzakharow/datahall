@@ -80,7 +80,7 @@ def run():
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
                 FROM technician_tasks
                 WHERE technician_id = ANY(:tech_ids)
-                  AND DATE(timestamp) = :today
+                  AND timestamp = :today
             ) sub
             LEFT JOIN technicians u ON u.id = sub.source
             WHERE rn = 1"""), {
