@@ -131,6 +131,11 @@ def run():
     # if st.button("📂 Save tasks"):
     if submitted:
         datetime_now = datetime.now()
+
+        timezone = pytz.timezone(LOCAL_TIMEZONE)
+        now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+        now_in_timezone = now_utc.astimezone(timezone)
+
         status_id = 1 # in progress
         with engine.begin() as conn:
             for idx, row in edited_df.iterrows():
@@ -172,7 +177,7 @@ def run():
                         "rack_id": rack_id,
                         "source": team_lead_id,
                         "position": position,
-                        "timestamp": datetime_now
+                        "timestamp": now_in_timezone
                         # "quantity": quantity,
                         # "percent": percent
                     })
@@ -189,7 +194,7 @@ def run():
                          "rack_id": rack_id,
                          "created_by": team_lead_id,
                          "position": position,
-                         "created_at": datetime_now,
+                         "created_at": now_in_timezone,
                          "status_id": status_id
                          })
                     else:
