@@ -209,7 +209,7 @@ def run():
             LEFT JOIN technicians u ON u.id = rs.created_by
             WHERE rs.created_at >= :start_datetime
               AND rs.created_at < :end_datetime
-            ORDER BY rs.created_at DESC
+            ORDER BY rs.rack_id, rs.activity_id, rs.cable_type_id, rs.position, rs.status_id, rs.created_at DESC;
         """), {
             "selected_date": selected_date,
             "tz": LOCAL_TIMEZONE,
