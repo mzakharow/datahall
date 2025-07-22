@@ -39,7 +39,7 @@ def run():
                     ct.name AS cable_type,
                     r.name AS rack,
                     COALESCE(src.name, '—') AS created_by,
-                    task.timestamp
+                    TO_CHAR(task.timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp
                 FROM technicians tech
                 LEFT JOIN technicians tl ON tech.team_lead = tl.id
                 LEFT JOIN (
@@ -48,7 +48,7 @@ def run():
                         SELECT *,
                                ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) AS rn
                         FROM technician_tasks
-                        WHERE DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') = :selected_date
+                        WHERE DATE(timestamp) = :selected_date
                     ) sub
                     WHERE rn = 1
                 ) task ON task.technician_id = tech.id
@@ -70,7 +70,7 @@ def run():
                     ct.name AS cable_type,
                     r.name,
                     COALESCE(src.name, '—') AS created_by,
-                    task.timestamp
+                    TO_CHAR(task.timestamp, 'YYYY-MM-DD HH24:MI:SS') AS timestamp
                 FROM technician_tasks task
                 LEFT JOIN technicians t ON task.technician_id = t.id
                 LEFT JOIN technicians tl ON t.team_lead = tl.id         
@@ -79,7 +79,7 @@ def run():
                 LEFT JOIN activities a ON task.activity_id = a.id
                 LEFT JOIN cable_type ct ON task.cable_type_id = ct.id
                 LEFT JOIN racks r ON task.rack_id = r.id
-                WHERE DATE(task.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') = :selected_date
+                WHERE DATE(task.timestamp) = :selected_date
                 ORDER BY task.timestamp DESC
             """
 
@@ -93,8 +93,8 @@ def run():
 
     df = pd.DataFrame([dict(row._mapping) for row in rows])
 
-    if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(ZoneInfo(LOCAL_TIMEZONE))
+    # if "timestamp" in df.columns:
+    #     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(ZoneInfo(LOCAL_TIMEZONE))
 
     with st.expander("🔍 Filters"):
         for col in ["technician", "team_lead", "location", "activity", "rack"]:
@@ -182,7 +182,10 @@ def run():
 
     tz = pytz.timezone('America/Chicago')
     date = datetime.strptime('2025-07-22', '%Y-%m-%d')
+    
+    # today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
 
+    
     start = tz.localize(date).astimezone(pytz.UTC)
     end = tz.localize(date + timedelta(days=1)).astimezone(pytz.UTC)
 
@@ -214,12 +217,12 @@ def run():
             LEFT JOIN cable_type ct ON ct.id = rs.cable_type_id
             LEFT JOIN statuses s ON s.id = rs.status_id
             LEFT JOIN technicians u ON u.id = rs.created_by
-            WHERE rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' >= :start_datetime
-                AND rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' < :end_datetime    
+            WHERE DATE(rs.created_at) = :today    
             ORDER BY rs.rack_id, rs.activity_id, rs.cable_type_id, rs.position, rs.status_id, rs.created_at DESC;
         """), {
             "selected_date": selected_date,
             "tz": LOCAL_TIMEZONE,
+            "today": selected_date
             "start_datetime": start, 
             "end_datetime": end
             # "start_datetime": start_datetime,
