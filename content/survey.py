@@ -5,6 +5,7 @@ from sqlalchemy import text
 from zoneinfo import ZoneInfo
 from db import get_engine
 from auth import get_user_by_email, encode_email, decode_email, generate_token, get_user_by_token
+import pytz
 
 def run():
     st.title("📋 Survey")
@@ -51,6 +52,10 @@ def run():
 
     LOCAL_TIMEZONE = "America/Chicago"
     today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
+
+    LOCAL_TIMEZONE = "America/Chicago"
+    timezone = pytz.timezone(LOCAL_TIMEZONE)
+    today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
     # start = datetime.combine(today_local, time.min).astimezone(ZoneInfo("UTC"))
     # end = datetime.combine(today_local, time.max).astimezone(ZoneInfo("UTC"))
 
@@ -60,7 +65,7 @@ def run():
                 SELECT location_id, activity_id, cable_type_id, rack
                 FROM technician_tasks
                 WHERE technician_id = :tech_id
-                  AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :today
+                  AND DATE(timestamp) = :today
                 ORDER BY timestamp DESC
                 LIMIT 1
             """), {
@@ -152,8 +157,9 @@ def run():
             if current_email != confirmed_email:
                 st.error("⚠️ Email doesn't match the verified one. Please use the confirmed email.")
             else:
-                now = datetime.now()
-
+                # now = datetime.now()
+                now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+                now_in_timezone = now_utc.astimezone(timezone)
                 with engine.begin() as conn:
                     conn.execute(text("""
                         INSERT INTO technician_tasks (
@@ -167,7 +173,7 @@ def run():
                         "cable_type_id": cable_options[selected_cable],
                         "rack_id": racks_options[selected_rack],
                         "source": user["id"],
-                        "timestamp": now
+                        "timestamp": now_in_timezone
                     })
 
                 st.success("Saved!")
