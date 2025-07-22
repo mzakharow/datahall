@@ -290,3 +290,92 @@ def run():
         if not error:
             st.success("Updated")
             st.rerun()
+# ====== racks ======
+    dh_rows = conn.execute(text("SELECT DISTINCT dh FROM racks ORDER BY dh")).fetchall()
+    dh_options = [row[0] for row in dh_rows]
+    selected_dh = st.selectbox("Select DH:", dh_options)
+
+# 2. Load lookup data
+    rack_df = pd.read_sql("SELECT id, name FROM racks WHERE dh = :dh ORDER BY name", conn, params={"dh": selected_dh})
+    cable_df = pd.read_sql("SELECT id, name FROM cable_type ORDER BY name", conn)
+
+    rack_options = {row['id']: row['name'] for _, row in rack_df.iterrows()}
+    cable_options = {row['id']: row['name'] for _, row in cable_df.iterrows()}
+    position_options = ["left", "right", "varies"]
+
+# 3. Load editable rack_results view
+    query = """
+    SELECT
+        r.id AS rack_id,
+        r.name AS rack_name,
+        rr.id AS result_id,
+        rr.cable_type_id,
+        rr.position,
+        rr.quantity,
+        rr.quantity_unit
+    FROM racks r
+    LEFT JOIN rack_results rr ON rr.rack_id = r.id
+    WHERE r.dh = :selected_dh
+    ORDER BY r.name
+    """
+    data = pd.read_sql(text(query), conn, params={"selected_dh": selected_dh})
+
+# 4. Rename columns for display
+    data = data.rename(columns={
+        "rack_id": "Rack",
+        "rack_name": "Rack Name",
+        "result_id": "Result ID",
+        "cable_type_id": "Cable Type",
+        "position": "Position",
+        "quantity": "Quantity",
+        "quantity_unit": "Quantity Unit"
+    })
+
+    st.subheader("📝 Edit or Add Rack Results")
+    edited = st.data_editor(
+        data,
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "Rack": st.column_config.SelectboxColumn("Rack", options=list(rack_options.keys()), required=True, format_func=lambda x: rack_options.get(x, "Unknown")),
+            "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.keys()), required=True, format_func=lambda x: cable_options.get(x, "Unknown")),
+            "Position": st.column_config.SelectboxColumn("Position", options=position_options, required=True),
+            "Quantity": st.column_config.NumberColumn("Quantity", min_value=1),
+            "Quantity Unit": st.column_config.TextColumn("Quantity Unit"),
+        },
+        key="rack_result_editor"
+    )
+
+# 5. Save button
+    if st.button("💾 Save Changes"):
+        for _, row in edited.iterrows():
+            if pd.isna(row["Result ID"]):
+            # Insert new
+                if pd.notna(row["Rack"]) and pd.notna(row["Cable Type"]) and pd.notna(row["Quantity"]):
+                    conn.execute(text("""
+                        INSERT INTO rack_results (rack_id, cable_type_id, position, quantity, quantity_unit)
+                        VALUES (:rack_id, :cable_type_id, :position, :quantity, :quantity_unit)
+                    """), {
+                        "rack_id": int(row["Rack"]),
+                        "cable_type_id": int(row["Cable Type"]),
+                        "position": row["Position"] or 'varies',
+                        "quantity": int(row["Quantity"]),
+                        "quantity_unit": row["Quantity Unit"]
+                    })
+            else:
+            # Update existing
+                conn.execute(text("""
+                    UPDATE rack_results
+                    SET cable_type_id = :cable_type_id,
+                        position = :position,
+                        quantity = :quantity,
+                        quantity_unit = :quantity_unit
+                    WHERE id = :result_id
+                """), {
+                    "cable_type_id": int(row["Cable Type"]),
+                    "position": row["Position"] or 'varies',
+                    "quantity": int(row["Quantity"]),
+                    "quantity_unit": row["Quantity Unit"],
+                    "result_id": int(row["Result ID"])
+                })
+        st.success("Changes saved successfully.")
