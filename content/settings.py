@@ -302,27 +302,27 @@ def run():
             conn,
             params={"dh": selected_dh}
         )
-    
+
         cable_df = pd.read_sql(
             text("SELECT id, name FROM cable_type ORDER BY name"),
             conn
         )
 
-        rack_options = {row['id']: row['name'] for _, row in rack_df.iterrows()}
-        cable_options = {row['id']: row['name'] for _, row in cable_df.iterrows()}
-
+    rack_options = {row['id']: row['name'] for _, row in rack_df.iterrows()}
+    cable_options = {row['id']: row['name'] for _, row in cable_df.iterrows()}
+    reverse_rack = {v: k for k, v in rack_options.items()}
+    reverse_cable = {v: k for k, v in cable_options.items()}
     position_options = ["left", "right", "varies"]
 
-    # ====== Load rack + results ======
     query = """
     SELECT
-    r.id AS rack_id,
-    r.name AS rack_name,
-    rr.id AS result_id,
-    rr.cable_type_id,
-    rr.position,
-    rr.quantity,
-    rr.measurement
+        r.id AS rack_id,
+        r.name AS rack_name,
+        rr.id AS result_id,
+        rr.cable_type_id,
+        rr.position,
+        rr.quantity,
+        rr.measurement
     FROM racks r
     LEFT JOIN rack_results rr ON rr.rack_id = r.id
     WHERE r.dh = :selected_dh
@@ -331,7 +331,6 @@ def run():
     with engine.begin() as conn:
         data = pd.read_sql(text(query), conn, params={"selected_dh": selected_dh})
 
-# ====== Rename columns for display ======
     data = data.rename(columns={
         "rack_id": "Rack",
         "rack_name": "Rack Name",
@@ -342,52 +341,46 @@ def run():
         "measurement": "Measurement"
     })
 
-# ====== Editable data grid ======
+    data["Rack"] = data["Rack"].map(rack_options)
+    data["Cable Type"] = data["Cable Type"].map(cable_options)
+
     st.subheader("📝 Edit or Add Rack Results")
     edited = st.data_editor(
         data,
         num_rows="dynamic",
         use_container_width=True,
         column_config={
-            "Rack": st.column_config.SelectboxColumn(
-                "Rack", options=list(rack_options.keys()),
-                required=True,
-                format_func=lambda x: rack_options.get(x, "Unknown")
-            ),
-            "Cable Type": st.column_config.SelectboxColumn(
-                "Cable Type", options=list(cable_options.keys()),
-                required=True,
-                format_func=lambda x: cable_options.get(x, "Unknown")
-            ),
-            "Position": st.column_config.SelectboxColumn(
-                "Position", options=position_options,
-                required=True
-            ),
+            "Rack": st.column_config.SelectboxColumn("Rack", options=list(rack_options.values()), required=True),
+            "Cable Type": st.column_config.SelectboxColumn("Cable Type", options=list(cable_options.values()), required=True),
+            "Position": st.column_config.SelectboxColumn("Position", options=position_options, required=True),
             "Quantity": st.column_config.NumberColumn("Quantity", min_value=1),
             "Measurement": st.column_config.TextColumn("Measurement"),
         },
         key="rack_result_editor"
     )
 
-# ====== Save changes ======
     if st.button("💾 Save Changes"):
         for _, row in edited.iterrows():
             with engine.begin() as conn:
+                rack_id = reverse_rack.get(row["Rack"])
+                cable_type_id = reverse_cable.get(row["Cable Type"])
+                position = row["Position"] or "varies"
+                quantity = int(row["Quantity"]) if pd.notna(row["Quantity"]) else None
+                measurement = row["Measurement"]
+
                 if pd.isna(row["Result ID"]):
-                # Insert new row
-                    if pd.notna(row["Rack"]) and pd.notna(row["Cable Type"]) and pd.notna(row["Quantity"]):
+                    if rack_id and cable_type_id and quantity:
                         conn.execute(text("""
                             INSERT INTO rack_results (rack_id, cable_type_id, position, quantity, measurement)
                             VALUES (:rack_id, :cable_type_id, :position, :quantity, :measurement)
                         """), {
-                            "rack_id": int(row["Rack"]),
-                            "cable_type_id": int(row["Cable Type"]),
-                            "position": row["Position"] or 'varies',
-                            "quantity": int(row["Quantity"]),
-                            "measurement": row["Measurement"]
+                            "rack_id": rack_id,
+                            "cable_type_id": cable_type_id,
+                            "position": position,
+                            "quantity": quantity,
+                            "measurement": measurement
                         })
                 else:
-                # Update existing row
                     conn.execute(text("""
                         UPDATE rack_results
                         SET cable_type_id = :cable_type_id,
@@ -396,10 +389,11 @@ def run():
                             measurement = :measurement
                         WHERE id = :result_id
                     """), {
-                        "cable_type_id": int(row["Cable Type"]),
-                        "position": row["Position"] or 'varies',
-                        "quantity": int(row["Quantity"]),
-                        "measurement": row["Measurement"],
+                        "cable_type_id": cable_type_id,
+                        "position": position,
+                        "quantity": quantity,
+                        "measurement": measurement,
                         "result_id": int(row["Result ID"])
                     })
+
         st.success("Changes saved successfully.")
