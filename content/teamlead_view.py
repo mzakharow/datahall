@@ -19,6 +19,9 @@ def run():
     show_all = st.checkbox("👥 Show all technicians", value=False)
 
     positions = {"varies": "varies", "left": "left", "right": "right"}
+
+    LOCAL_TIMEZONE = "America/Chicago"
+    timezone = pytz.timezone(LOCAL_TIMEZONE)
     
     with engine.connect() as conn:
         if show_all:
@@ -66,7 +69,6 @@ def run():
     tech_ids = [tech.id for tech in technicians]
     tech_id_to_teamlead = {tech.id: tech.team_lead_name for tech in technicians}
 
-    LOCAL_TIMEZONE = "America/Chicago"
     today_local = datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
 
     latest_tasks = {}
@@ -78,7 +80,7 @@ def run():
                        ROW_NUMBER() OVER (PARTITION BY technician_id ORDER BY timestamp DESC) as rn
                 FROM technician_tasks
                 WHERE technician_id = ANY(:tech_ids)
-                  AND DATE(timestamp AT TIME ZONE 'UTC' AT TIME ZONE :tz) = :today
+                  AND DATE(timestamp) = :today
             ) sub
             LEFT JOIN technicians u ON u.id = sub.source
             WHERE rn = 1"""), {
@@ -104,7 +106,7 @@ def run():
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
         # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
-        "Time": latest_tasks.get(tech.id, {}).get("timestamp", "").astimezone(ZoneInfo(LOCAL_TIMEZONE)).strftime("%H:%M") if latest_tasks.get(tech.id, {}).get("timestamp") else ""
+        "Time": latest_tasks.get(tech.id, {}).get("timestamp", "")
     } for i, tech in enumerate(technicians)])
 
     with st.form("edit_tasks_form"):
@@ -133,7 +135,7 @@ def run():
     if submitted:
         datetime_now = datetime.now()
 
-        timezone = pytz.timezone(LOCAL_TIMEZONE)
+        
         now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
         now_in_timezone = now_utc.astimezone(timezone)
 
@@ -236,6 +238,8 @@ def run():
         submitted = st.form_submit_button("✅ Save")
 
     if submitted:
+        now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+        now_in_timezone = now_utc.astimezone(timezone)
         with engine.begin() as conn:
             conn.execute(text("""
                 INSERT INTO rack_states (rack_id, activity_id, cable_type_id, status_id, position, quantity, percent, created_by, created_at)
@@ -248,6 +252,7 @@ def run():
                 "position": positions[selected_position],
                 "quantity": quantity,
                 "percent": percent,
-                "created_by": st.session_state.user["id"]
+                "created_by": st.session_state.user["id"],
+                "timestamp": now_in_timezone
             })
         st.success("✅ Changes saved!")
