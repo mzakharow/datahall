@@ -5,6 +5,7 @@ from datetime import datetime, time, timedelta
 from db import get_engine
 from auth import is_admin
 from zoneinfo import ZoneInfo
+import pytz
 
 def run():
     st.title("📊 Technician Tasks Report")
@@ -179,6 +180,12 @@ def run():
     start_datetime = datetime.combine(selected_date, time.min).replace(tzinfo=ZoneInfo(LOCAL_TIMEZONE))
     end_datetime = start_datetime + timedelta(days=1)
 
+    tz = pytz.timezone('America/Chicago')
+    date = datetime.strptime('2025-07-22', '%Y-%m-%d')
+
+    start = tz.localize(date).astimezone(pytz.UTC)
+    end = tz.localize(date + timedelta(days=1)).astimezone(pytz.UTC)
+
     # engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(text("""
@@ -207,14 +214,16 @@ def run():
             LEFT JOIN cable_type ct ON ct.id = rs.cable_type_id
             LEFT JOIN statuses s ON s.id = rs.status_id
             LEFT JOIN technicians u ON u.id = rs.created_by
-            WHERE rs.created_at >= :start_datetime
-              AND rs.created_at < :end_datetime
+            WHERE rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' >= :start_datetime
+                AND rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' < :end_datetime    
             ORDER BY rs.rack_id, rs.activity_id, rs.cable_type_id, rs.position, rs.status_id, rs.created_at DESC;
         """), {
             "selected_date": selected_date,
             "tz": LOCAL_TIMEZONE,
-            "start_datetime": start_datetime,
-            "end_datetime": end_datetime
+            "start_datetime": start, 
+            "end_datetime": end
+            # "start_datetime": start_datetime,
+            # "end_datetime": end_datetime
         }).fetchall()
 
     if not rows:
