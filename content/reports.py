@@ -222,7 +222,7 @@ def run():
         """), {
             "selected_date": selected_date,
             "tz": LOCAL_TIMEZONE,
-            "today": selected_date
+            "today": selected_date,
             "start_datetime": start, 
             "end_datetime": end
             # "start_datetime": start_datetime,
