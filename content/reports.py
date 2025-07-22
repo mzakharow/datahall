@@ -208,6 +208,7 @@ def run():
                     WHERE tt2.rack_id = rs.rack_id
                       AND tt2.activity_id = rs.activity_id
                       AND tt2.cable_type_id = rs.cable_type_id
+                      AND DATE(tt2.timestamp) = :today
                 ) AS technicians,
                 u.name AS created_by,
                 rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS created_at
