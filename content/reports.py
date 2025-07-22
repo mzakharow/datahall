@@ -200,7 +200,7 @@ def run():
                       AND tt2.cable_type_id = rs.cable_type_id
                 ) AS technicians,
                 u.name AS created_by,
-                rs.created_at
+                rs.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS created_at
             FROM rack_states rs
             JOIN racks r ON r.id = rs.rack_id
             LEFT JOIN activities a ON a.id = rs.activity_id
