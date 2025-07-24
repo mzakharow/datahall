@@ -2,7 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
 import streamlit as st
-from sqlalchemy import text
+from sqlalchemy import text, select
 from db import get_engine
 import pytz
 
@@ -238,28 +238,57 @@ def run():
             selected_cable = st.selectbox("Cable type", list(cable_type_options.keys()))
             selected_status = st.selectbox("Status", list(status_options.keys()))
         with col2:
-            selected_position = st.selectbox("position", list(positions.keys()))
-            quantity = st.number_input("quantity", min_value=0, step=1)
-            percent = st.slider("percent", min_value=0, max_value=100, step=1)
+            selected_position = st.selectbox("Position", list(positions.keys()))
+            quantity = st.number_input("Quantity", min_value=0, step=1)
 
         submitted = st.form_submit_button("✅ Save")
 
     if submitted:
+        rack_id = rack_options[selected_rack]
+        activity_id = activity_options[selected_activity]
+        cable_id = cable_type_options[selected_cable]
+        position = positions[selected_position]
+
         now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
         now_in_timezone = now_utc.astimezone(timezone)
+
+        with engine.connect() as conn:
+            planned = conn.execute(text("""
+                SELECT quantity FROM rack_results 
+                WHERE rack_id = :rack_id AND activity_id = :activity_id 
+                  AND cable_type_id = :cable_type_id AND position = :position
+            """), {
+                "rack_id": rack_id,
+                "activity_id": activity_id,
+                "cable_type_id": cable_id,
+                "position": position
+            }).scalar()
+
+        if planned and planned > 0:
+            percent = round(quantity / planned * 100, 1)
+        else:
+            percent = 0
+
         with engine.begin() as conn:
             conn.execute(text("""
-                INSERT INTO rack_states (rack_id, activity_id, cable_type_id, status_id, position, quantity, percent, created_by, created_at)
-                VALUES (:rack_id, :activity_id, :cable_type_id, :status_id, :position, :quantity, :percent, :created_by, NOW())
+                INSERT INTO rack_states (
+                    rack_id, activity_id, cable_type_id, status_id, 
+                    position, quantity, percent, created_by, created_at
+                )
+                VALUES (
+                    :rack_id, :activity_id, :cable_type_id, :status_id,
+                    :position, :quantity, :percent, :created_by, :created_at
+                )
             """), {
-                "rack_id": rack_options[selected_rack],
-                "activity_id": activity_options[selected_activity],
-                "cable_type_id": cable_type_options[selected_cable],
+                "rack_id": rack_id,
+                "activity_id": activity_id,
+                "cable_type_id": cable_id,
                 "status_id": status_options[selected_status],
-                "position": positions[selected_position],
+                "position": position,
                 "quantity": quantity,
                 "percent": percent,
                 "created_by": st.session_state.user["id"],
-                "timestamp": now_in_timezone
+                "created_at": now_in_timezone
             })
-        st.success("✅ Changes saved!")
+
+        st.success(f"✅ Task closed. Completion: {percent}%")
