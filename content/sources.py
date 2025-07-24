@@ -96,11 +96,39 @@ def run():
         st.rerun()
 
 
-    with engine.connect() as conn:
-        existing_racks = conn.execute(text("SELECT id, name, dh, su, lu, row FROM racks ORDER BY name")).fetchall()
+    st.subheader("📋 Existing Racks with Results")
 
-    st.subheader("📋 Existing Racks")
-    if existing_racks:
-        st.table([dict(row._mapping) for row in existing_racks])
-    else:
-        st.info("No racks found.")
+    with engine.connect() as conn:
+        dh_rows = conn.execute(text("SELECT DISTINCT dh FROM racks ORDER BY dh")).fetchall()
+        dh_options = [row.dh for row in dh_rows if row.dh]
+
+    selected_dh = st.selectbox("📍 Select Datahall (DH)", dh_options)
+
+    if selected_dh:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT
+                    r.id,
+                    r.name AS rack_name,
+                    r.dh,
+                    r.su,
+                    r.lu,
+                    r.row,
+                    a.name AS activity,
+                    ct.name AS cable_type,
+                    rr.quantity,
+                    rr.measurement
+                FROM racks r
+                LEFT JOIN rack_results rr ON rr.rack_id = r.id
+                LEFT JOIN activities a ON a.id = rr.activity_id
+                LEFT JOIN cable_type ct ON ct.id = rr.cable_type_id
+                WHERE r.dh = :selected_dh
+                ORDER BY r.name
+            """), {"selected_dh": selected_dh})
+
+            rows = result.fetchall()
+            if rows:
+                df = pd.DataFrame([dict(row._mapping) for row in rows])
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("No racks found for selected DH.")
