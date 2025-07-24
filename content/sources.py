@@ -13,6 +13,13 @@ def run():
     st.markdown("---")
     st.subheader("➕ Add New Rack")
 
+    with engine.connect() as conn:
+        activity_rows = conn.execute(text("SELECT id, name FROM activities ORDER BY name")).fetchall()
+        cable_rows = conn.execute(text("SELECT id, name FROM cable_type ORDER BY name")).fetchall()
+
+    activity_options = {row.id: row.name for row in activity_rows}
+    cable_type_options = {row.id: row.name for row in cable_rows}
+
     with st.form("add_rack_form"):
         name = st.text_input("Rack Name", max_chars=50)
         dh = st.text_input("Datahall (DH)", max_chars=15)
@@ -20,9 +27,9 @@ def run():
         lu = st.text_input("LU", max_chars=10)
         row_value = st.text_input("Row", max_chars=10)
 
-        activity = st.selectbox("Activity", activity_options)  # заранее загрузи из БД
+        activity = st.selectbox("Activity", options=list(activity_options.keys()), format_func=lambda x: activity_options[x])
+        cable_type = st.selectbox("Cable Type", options=list(cable_type_options.keys()), format_func=lambda x: cable_type_options[x])
         position = st.selectbox("Position", ["left", "right", "varies"])
-        cable_type = st.selectbox("Cable Type", cable_type_options)  # из БД
         quantity = st.number_input("Quantity", min_value=0)
         measurement = st.text_input("Measurement (optional)", max_chars=20)
 
