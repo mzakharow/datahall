@@ -3,6 +3,7 @@
 import streamlit as st
 from sqlalchemy import text
 from db import get_engine
+import pandas as pd
 
 def run():
     st.title("📦 Sources")
