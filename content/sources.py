@@ -9,14 +9,6 @@ def run():
 
     engine = get_engine()
 
-    with engine.connect() as conn:
-        existing_racks = conn.execute(text("SELECT id, name, dh, su, lu, row FROM racks ORDER BY name")).fetchall()
-
-    st.subheader("📋 Existing Racks")
-    if existing_racks:
-        st.table([dict(row._mapping) for row in existing_racks])
-    else:
-        st.info("No racks found.")
 
     st.markdown("---")
     st.subheader("➕ Add New Rack")
@@ -49,3 +41,13 @@ def run():
 
         st.success(f"✅ Rack '{name}' added.")
         st.rerun()
+
+
+    with engine.connect() as conn:
+        existing_racks = conn.execute(text("SELECT id, name, dh, su, lu, row FROM racks ORDER BY name")).fetchall()
+
+    st.subheader("📋 Existing Racks")
+    if existing_racks:
+        st.table([dict(row._mapping) for row in existing_racks])
+    else:
+        st.info("No racks found.")
