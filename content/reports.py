@@ -195,6 +195,7 @@ def run():
             SELECT DISTINCT ON (rs.rack_id, rs.activity_id, rs.cable_type_id, rs.position, rs.status_id)
                 r.name AS rack_name,
                 r.dh,
+                r.su,
                 rs.position,
                 a.name AS activity,
                 ct.name AS cable_type,
