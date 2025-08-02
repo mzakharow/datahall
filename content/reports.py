@@ -143,10 +143,16 @@ def run():
 
                 FROM racks r
                 LEFT JOIN (
-                    SELECT DISTINCT ON (rack_id, position, activity_id, cable_type_id)
-                           *
-                    FROM rack_states
-                    ORDER BY rack_id, position, activity_id, cable_type_id, status_id, created_at DESC
+                    SELECT *
+                    FROM (
+                        SELECT *,
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY rack_id, position, activity_id, cable_type_id
+                                   ORDER BY created_at DESC
+                               ) AS rn
+                        FROM rack_states
+                    ) ranked
+                    WHERE rn = 1
                 ) rs ON rs.rack_id = r.id
 
                 LEFT JOIN activities a ON rs.activity_id = a.id
