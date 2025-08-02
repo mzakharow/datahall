@@ -1,5 +1,4 @@
 
-         
 import streamlit as st
 from sqlalchemy import text
 from db import get_engine
@@ -30,7 +29,7 @@ def run():
 
         activity = st.selectbox("Activity", options=list(activity_options.keys()), format_func=lambda x: activity_options[x])
         cable_type = st.selectbox("Cable Type", options=list(cable_type_options.keys()), format_func=lambda x: cable_type_options[x])
-        position = st.selectbox("Position", ["left", "right", "varies"])
+        position = st.selectbox("Position", ["left", "right", "varies", "back", "front"])
         quantity = st.number_input("Quantity", min_value=0)
         measurement = st.text_input("Measurement (optional)", max_chars=20)
 

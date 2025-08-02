@@ -18,7 +18,7 @@ def run():
     team_lead_id = user["id"]
     show_all = st.checkbox("👥 Show all technicians", value=False)
 
-    positions = {"varies": "varies", "left": "left", "right": "right"}
+    positions = {"varies": "varies", "left": "left", "right": "right", "back": "back", "front": "front"}
 
     LOCAL_TIMEZONE = "America/Chicago"
     timezone = pytz.timezone(LOCAL_TIMEZONE)
@@ -211,12 +211,11 @@ def run():
                         continue
                         #st.warning("Rack and cable type must be select
                     
-
         st.success("✅ Changes saved!")
         st.rerun()
     
     st.markdown("---")
-    st.subheader("📌 Close task")
+    st.subheader("📌 Create task")
 
     with engine.connect() as conn:
         racks = conn.execute(text("SELECT id, name, dh FROM racks ORDER BY name")).fetchall()
@@ -228,7 +227,7 @@ def run():
     activity_options = {a.name: a.id for a in activities}
     cable_type_options = {c.name: c.id for c in cable_types}
     status_options = {s.name: s.id for s in statuses}
-    positions = {"Varies": "varies", "Left": "left", "Right": "right"}
+    positions = {"Varies": "varies", "Left": "left", "Right": "right", "Back": "back", "Front": "front"}
 
     with st.form("rack_task_form"):
         col1, col2 = st.columns(2)
@@ -291,4 +290,4 @@ def run():
                 "created_at": now_in_timezone
             })
 
-        st.success(f"✅ Task closed. Completion: {percent}%")
+        st.success(f"✅ Saved. Completion: {percent}%")
