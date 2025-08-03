@@ -293,35 +293,48 @@ def run():
 
 
     st.subheader("📂 Manage Projects")
-        # === Load existing projects ===
     with engine.connect() as conn:
         rows = conn.execute(text("SELECT project, time_zone, customer FROM projects ORDER BY project")).fetchall()
         df = pd.DataFrame([dict(row._mapping) for row in rows]) if rows else pd.DataFrame(
             columns=["project", "time_zone", "customer"]
         )
-        st.write("### 📝 Existing Projects")
+
+    st.write("### 📝 Existing Projects")
     
-        with st.form("edit_projects_form"):
-            edited_df = st.data_editor(
-                df,
-                num_rows="dynamic",
-                use_container_width=True,
-                hide_index=True,
-                key="projects_editor",
-                column_config={
-                    "project": st.column_config.TextColumn("Project ID", help="Unique ID (letters, digits, '-')"),
-                    "time_zone": st.column_config.TextColumn("Time Zone", help="e.g., America/Chicago"),
-                    "customer": st.column_config.TextColumn("Customer", help="Max 20 chars")
-                }
-            )
-            submitted = st.form_submit_button("💾 Save Changes")
+    with st.form("edit_projects_form"):
+        edited_df = st.data_editor(
+            df,
+            num_rows="dynamic",
+            use_container_width=True,
+            hide_index=True,
+            key="projects_editor",
+            column_config={
+                "project": st.column_config.TextColumn("Project ID", help="Unique ID (letters, digits, '-')"),
+                "time_zone": st.column_config.TextColumn("Time Zone", help="e.g., America/Chicago"),
+                "customer": st.column_config.TextColumn("Customer", help="Max 20 chars")
+            }
+        )
+        submitted = st.form_submit_button("💾 Save Changes")
 
-        if submitted:
-            with engine.begin() as conn:
-                conn.execute(text("DELETE FROM projects"))
+    if submitted:
+        with engine.begin() as conn:
+            for _, row in edited_df.iterrows():
+                if pd.notna(row["project"]) and pd.notna(row["time_zone"]):
+                    existing = conn.execute(text("""
+                        SELECT 1 FROM projects WHERE project = :project
+                    """), {"project": str(row["project"]).strip()}).fetchone()
 
-                for _, row in edited_df.iterrows():
-                   if pd.notna(row["project"]) and pd.notna(row["time_zone"]):
+                    if existing:
+                        conn.execute(text("""
+                            UPDATE projects
+                            SET time_zone = :time_zone, customer = :customer
+                            WHERE project = :project
+                        """), {
+                            "project": str(row["project"]).strip(),
+                            "time_zone": str(row["time_zone"]).strip(),
+                            "customer": str(row["customer"]).strip() if pd.notna(row["customer"]) else None
+                        })
+                    else:
                         conn.execute(text("""
                             INSERT INTO projects (project, time_zone, customer)
                             VALUES (:project, :time_zone, :customer)
@@ -331,5 +344,5 @@ def run():
                             "customer": str(row["customer"]).strip() if pd.notna(row["customer"]) else None
                         })
 
-            st.success("✅ Projects updated successfully!")
-            st.rerun()
+        st.success("✅ Projects updated successfully!")
+        st.rerun()
