@@ -192,7 +192,8 @@ def run():
                         # "percent": percent
                     })
 
-                    if rack_id is not None and act_id is not None:
+                    if rack_id is not None and not rack_id == 139 and act_id is not None:
+                        st.warning(rack_id)
                         conn.execute(text("""
                             INSERT INTO rack_states (
                                 rack_id, activity_id, cable_type_id, created_by, position, created_at, status_id
