@@ -183,11 +183,13 @@ def run():
 
     with engine.connect() as conn:
         df_tech = pd.read_sql("SELECT * FROM technicians ORDER BY id", conn)
+        projects = conn.execute(text("SELECT project FROM projects ORDER BY project")).fetchall()
+        project_options = [row.project for row in projects]
 
     all_names = {row["id"]: row["name"] for _, row in df_tech.iterrows()}
     team_leads = {row["id"]: row["name"] for _, row in df_tech.iterrows() if row.get("is_teamlead")}
 
-    tech_display = df_tech[["id", "name", "email", "team_lead", "activ", "is_teamlead", "admin"]].copy()
+    tech_display = df_tech[["id", "name", "email", "team_lead", "project", "activ", "is_teamlead", "admin"]].copy()
     tech_display["del"] = False
     tech_display["team_lead_name"] = tech_display["team_lead"].map(team_leads).fillna("—")
 
@@ -196,7 +198,7 @@ def run():
     # df_tech["encoded_email"] = encode_email(df_tech["email"])
 
     edited = st.data_editor(
-        tech_display[["name", "email", "team_lead_name", "is_teamlead", "activ", "admin", "del"]],
+        tech_display[["name", "email", "team_lead_name", "project", "is_teamlead", "activ", "admin", "del"]],
         num_rows="dynamic",
         use_container_width=True,
         key="technicians_editor",
@@ -209,6 +211,7 @@ def run():
             "is_teamlead": st.column_config.CheckboxColumn("is teamlead"),
             "activ": st.column_config.CheckboxColumn("active"),
             # "encoded_email": st.column_config.TextColumn("Encoded Email", disabled=True),
+            "project": st.column_config.SelectboxColumn("Project", options=project_options),
             "del": st.column_config.CheckboxColumn("del")
         }
     )
@@ -223,6 +226,7 @@ def run():
                 name = str(row["name"]).strip()
                 email = str(row["email"]).strip().lower()
                 team_lead_name = str(row["team_lead_name"]).strip()
+                project = str(row["project"]).strip()
                 is_teamlead = bool(row["is_teamlead"])
                 activ = bool(row["activ"])
                 admin = bool(row["admin"])
@@ -257,11 +261,11 @@ def run():
                 if idx >= len(df_tech):
                     if not to_delete:
                         conn.execute(text("""
-                            INSERT INTO technicians (name, email, team_lead, is_teamlead, activ, admin)
-                            VALUES (:name, :email, :team_lead, :is_teamlead, :activ, :admin)
+                            INSERT INTO technicians (name, email, team_lead, project, is_teamlead, activ, admin)
+                            VALUES (:name, :email, :team_lead, :project, :is_teamlead, :activ, :admin)
                         """), {
                             "name": name, "email": email,
-                            "team_lead": team_lead_id, "is_teamlead": is_teamlead, "activ": activ, "admin": admin,
+                            "team_lead": team_lead_id, "project": project, "is_teamlead": is_teamlead, "activ": activ, "admin": admin,
                         })
                 else:
                     tech_id = df_tech.iloc[idx]["id"]
@@ -274,6 +278,7 @@ def run():
                             SET name = :name,
                                 email = :email,
                                 team_lead = :team_lead,
+                                project = :project,
                                 is_teamlead = :is_teamlead,
                                 activ = :activ,
                                 admin = :admin
@@ -281,6 +286,7 @@ def run():
                         """), {
                             "name": name, "email": email,
                             "team_lead": int(team_lead_id) if team_lead_id is not None else None,
+                            "project": project,
                             "is_teamlead": is_teamlead,
                             "activ": activ,
                             "admin": admin,
@@ -298,8 +304,6 @@ def run():
         df = pd.DataFrame([dict(row._mapping) for row in rows]) if rows else pd.DataFrame(
             columns=["project", "time_zone", "customer"]
         )
-
-    st.write("### 📝 Existing Projects")
     
     with st.form("edit_projects_form"):
         edited_df = st.data_editor(
