@@ -258,6 +258,8 @@ def run():
 
                 emails_seen.add(email)
 
+                project_value = row["project"] if row["project"] and row["project"] != "None" else None
+                
                 if idx >= len(df_tech):
                     if not to_delete:
                         conn.execute(text("""
@@ -265,7 +267,7 @@ def run():
                             VALUES (:name, :email, :team_lead, :project, :is_teamlead, :activ, :admin)
                         """), {
                             "name": name, "email": email,
-                            "team_lead": team_lead_id, "project": project, "is_teamlead": is_teamlead, "activ": activ, "admin": admin,
+                            "team_lead": team_lead_id, "project": project_value, "is_teamlead": is_teamlead, "activ": activ, "admin": admin,
                         })
                 else:
                     tech_id = df_tech.iloc[idx]["id"]
@@ -286,7 +288,7 @@ def run():
                         """), {
                             "name": name, "email": email,
                             "team_lead": int(team_lead_id) if team_lead_id is not None else None,
-                            "project": project,
+                            "project": project_value,
                             "is_teamlead": is_teamlead,
                             "activ": activ,
                             "admin": admin,
