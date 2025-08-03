@@ -172,7 +172,7 @@ def run():
                 position = row.get("Position")
                 quantity = max(0, int(row.get("Quantity", 0)))
                 # percent = min(100, max(0, int(row.get("Percent", 0))))
-                percent = round(quantity / planned * 100, 1)
+                # percent = round(quantity / planned * 100, 1)
 
                 if tech_id and loc_id:
                     if not act_id:
