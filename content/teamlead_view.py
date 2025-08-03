@@ -6,6 +6,8 @@ from sqlalchemy import text, select
 from db import get_engine
 import pytz
 
+import utils
+
 
 def run():
     st.title("👷 Team Lead Panel")
@@ -111,7 +113,7 @@ def run():
         "Team lead": tech_id_to_teamlead.get(tech.id, "-"),
         "Created by": latest_tasks.get(tech.id, {}).get("created_by", "-"),
         # "Team lead": next((team_lead.name for team_lead in team_leads if team_lead.id == technicians.get(tech.id, {}).get("technician_id")), list(tech_ids.keys())[0]),
-        # "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
+        "Quantity": latest_tasks.get(tech.id, {}).get("quantity", 0),
         # "Percent": latest_tasks.get(tech.id, {}).get("percent", 0),
         "Time": latest_tasks.get(tech.id, {}).get("timestamp", "")
     } for i, tech in enumerate(technicians)])
@@ -132,7 +134,7 @@ def run():
                 "Rack": st.column_config.SelectboxColumn("Rack", options=list(racks_options.keys())),
                 "Position": st.column_config.SelectboxColumn("Position", options=list(positions.keys())),
                 # "Team lead": st.column_config.SelectboxColumn("Team lead", options=list(team_leads.keys())),
-                # "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0),
+                "Quantity": st.column_config.NumberColumn("Quantity", min_value=0, step=1, default=0)
                 # "Percent": st.column_config.NumberColumn("Percent", min_value=0, max_value=100, step=1, default=0)
             }
         )
@@ -156,8 +158,8 @@ def run():
                     row["Cable Type"] == original["Cable Type"] and
                     row["Rack"] == original["Rack"]
                     and row["Position"] == original["Position"]
-                    # and int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0) and
-                    # int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
+                    and int(row["Quantity"] if pd.notna(row["Quantity"]) else 0) == int(original["Quantity"] if pd.notna(original["Quantity"]) else 0)
+                    # and int(row["Percent"] if pd.notna(row["Percent"]) else 0) == int(original["Percent"] if pd.notna(original["Percent"]) else 0)
                 ):
                     continue
 
@@ -168,8 +170,9 @@ def run():
                 cable_id = cable_options.get(row["Cable Type"])
                 rack_id = racks_options.get(row["Rack"])
                 position = row.get("Position")
-                # quantity = max(0, int(row.get("Quantity", 0)))
+                quantity = max(0, int(row.get("Quantity", 0)))
                 # percent = min(100, max(0, int(row.get("Percent", 0))))
+                percent = round(quantity / planned * 100, 1)
 
                 if tech_id and loc_id:
                     if not act_id:
@@ -187,8 +190,8 @@ def run():
                         "rack_id": rack_id,
                         "source": team_lead_id,
                         "position": position,
-                        "timestamp": now_in_timezone
-                        # "quantity": quantity,
+                        "timestamp": now_in_timezone,
+                        "quantity": quantity
                         # "percent": percent
                     })
 
@@ -197,9 +200,9 @@ def run():
                     if (rack_id is not None and not rack_id == blank_rack) and (act_id is not None and not act_id == blank_activity):
                         conn.execute(text("""
                             INSERT INTO rack_states (
-                                rack_id, activity_id, cable_type_id, created_by, position, created_at, status_id
+                                rack_id, activity_id, cable_type_id, created_by, position, created_at, status_id, quantity
                         )
-                        VALUES (:rack_id, :act_id, :cable_type_id, :created_by, :position, :created_at, :status_id)
+                        VALUES (:rack_id, :act_id, :cable_type_id, :created_by, :position, :created_at, :status_id, :quantity)
                         """), {
                         "act_id": act_id,
                         "cable_type_id": cable_id,
@@ -207,7 +210,9 @@ def run():
                          "created_by": team_lead_id,
                          "position": position,
                          "created_at": now_in_timezone,
-                         "status_id": status_id
+                         "status_id": status_id,
+                         "quantity": quantity,
+                         "percent": utils.calculation.percent_calculation(rack_id, activity_id, cable_id, position, quantity)
                          })
                     else:
                         continue
@@ -253,22 +258,24 @@ def run():
         now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
         now_in_timezone = now_utc.astimezone(timezone)
 
-        with engine.connect() as conn:
-            planned = conn.execute(text("""
-                SELECT quantity FROM rack_results 
-                WHERE rack_id = :rack_id AND activity_id = :activity_id 
-                  AND cable_type_id = :cable_type_id AND position = :position
-            """), {
-                "rack_id": rack_id,
-                "activity_id": activity_id,
-                "cable_type_id": cable_id,
-                "position": position
-            }).scalar()
+        # with engine.connect() as conn:
+        #     planned = conn.execute(text("""
+        #         SELECT quantity FROM rack_results 
+        #         WHERE rack_id = :rack_id AND activity_id = :activity_id 
+        #           AND cable_type_id = :cable_type_id AND position = :position
+        #     """), {
+        #         "rack_id": rack_id,
+        #         "activity_id": activity_id,
+        #         "cable_type_id": cable_id,
+        #         "position": position
+        #     }).scalar()
 
-        if planned and planned > 0:
-            percent = round(quantity / planned * 100, 1)
-        else:
-            percent = 0
+        # if planned and planned > 0:
+        #     percent = round(quantity / planned * 100, 1)
+        # else:
+        #     percent = 0
+        
+        percent = utils.calculation.percent_calculation(rack_id, activity_id, cable_id, position, quantity)
 
         with engine.begin() as conn:
             conn.execute(text("""
