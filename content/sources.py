@@ -41,13 +41,13 @@ def run():
             st.stop()
 
         with engine.begin() as conn:
-        # Check if rack already exists
+
             existing = conn.execute(text("""
                 SELECT id FROM racks WHERE name = :name AND dh = :dh
             """), {"name": name.strip(), "dh": dh.strip()}).fetchone()
 
             if existing:
-            # Update existing rack
+
                 rack_id = existing.id
                 conn.execute(text("""
                     UPDATE racks
@@ -61,7 +61,7 @@ def run():
                 })
                 st.info(f"ℹ️ Rack '{name}' updated.")
             else:
-            # Insert new rack
+
                 result = conn.execute(text("""
                     INSERT INTO racks (name, dh, su, lu, row)
                     VALUES (:name, :dh, :su, :lu, :row)
@@ -76,7 +76,6 @@ def run():
                 rack_id = result.scalar()
                 st.success(f"✅ Rack '{name}' added.")
 
-        # Insert into rack_results only if required fields are filled
             if activity and position and cable_type and quantity > 0:
                 conn.execute(text("""
                     INSERT INTO rack_results (rack_id, activity_id, position, cable_type_id, quantity, measurement)
@@ -95,8 +94,8 @@ def run():
     
         st.rerun()
 
-
-    st.subheader("📋 Existing Racks with Results")
+    st.markdown("---")
+    st.subheader("📋 Racks")
 
     with engine.connect() as conn:
         dh_rows = conn.execute(text("SELECT DISTINCT dh FROM racks ORDER BY dh")).fetchall()

@@ -212,7 +212,7 @@ def run():
                          "created_at": now_in_timezone,
                          "status_id": status_id,
                          "quantity": quantity,
-                         "percent": utils.calculation.percent_calculation(rack_id, activity_id, cable_id, position, quantity)
+                         "percent": utils.calculation.percent_calculation(rack_id, act_id, cable_id, position, quantity)
                          })
                     else:
                         continue
