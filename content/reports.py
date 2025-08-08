@@ -6,6 +6,11 @@ from db import get_engine
 from auth import is_admin
 from zoneinfo import ZoneInfo
 import pytz
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+import tempfile
+import os
 
 def run():
     st.title("📊 Technician Tasks Report")
@@ -257,3 +262,69 @@ def run():
                 df = df[df["created_by"].isin(selected_creators)]
 
     st.dataframe(df, use_container_width=True)
+    
+    if st.button("📄 Generate PDF report for today"):
+        today = date.today()
+        with engine.connect() as conn:
+            dhs = conn.execute(text("""
+                SELECT DISTINCT r.dh
+                FROM rack_states rs
+                JOIN racks r ON rs.rack_id = r.id
+                WHERE DATE(rs.created_at) = :today
+            """), {"today": today}).fetchall()
+
+            dh_list = [row[0] for row in dhs]
+            pdf_buffer = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            doc = SimpleDocTemplate(pdf_buffer.name, pagesize=A4)
+            styles = getSampleStyleSheet()
+            story = []
+
+            story.append(Paragraph(f"<b>📅 Report for: {today.strftime('%Y-%m-%d')}</b>", styles["Title"]))
+            story.append(Spacer(1, 12))
+
+            for dh in dh_list:
+                story.append(Paragraph(f"<b>📌 Datahall: {dh}</b>", styles["Heading2"]))
+                statuses = conn.execute(text("""
+                    SELECT DISTINCT s.name
+                    FROM rack_states rs
+                    JOIN racks r ON rs.rack_id = r.id
+                    JOIN statuses s ON rs.status_id = s.id
+                    WHERE r.dh = :dh AND DATE(rs.created_at) = :today
+                """), {"dh": dh, "today": today}).fetchall()
+
+                for status_row in statuses:
+                    status = status_row[0]
+                    story.append(Paragraph(f"<b>Status: {status}</b>", styles["Heading3"]))
+
+                    summary = conn.execute(text("""
+                        SELECT a.name as activity, ct.name as cable_type, COUNT(DISTINCT rs.rack_id) as rack_count
+                        FROM rack_states rs
+                        JOIN racks r ON rs.rack_id = r.id
+                        JOIN activities a ON rs.activity_id = a.id
+                        JOIN cable_type ct ON rs.cable_type_id = ct.id
+                        JOIN statuses s ON rs.status_id = s.id
+                        WHERE r.dh = :dh AND DATE(rs.created_at) = :today AND s.name = :status
+                        GROUP BY a.name, ct.name
+                        ORDER BY a.name, ct.name
+                    """), {"dh": dh, "today": today, "status": status}).fetchall()
+
+                    if summary:
+                        for row in summary:
+                            story.append(Paragraph(f"• Activity: <b>{row.activity}</b>, Cable: <b>{row.cable_type}</b>, Racks: <b>{row.rack_count}</b>", styles["Normal"]))
+                    else:
+                        story.append(Paragraph("No data for this status.", styles["Italic"]))
+
+                    story.append(Spacer(1, 6))
+                story.append(Spacer(1, 12))
+
+            doc.build(story)
+
+            with open(pdf_buffer.name, "rb") as f:
+                st.download_button(
+                    label="📥 Download PDF",
+                    data=f.read(),
+                    file_name=f"daily_report_{today}.pdf",
+                    mime="application/pdf"
+                )
+
+            os.unlink(pdf_buffer.name)
