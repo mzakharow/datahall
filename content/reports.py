@@ -264,7 +264,7 @@ def run():
     st.dataframe(df, use_container_width=True)
     
     if st.button("📄 Generate PDF report for today"):
-        today = date.today()
+        today = selected_date
         with engine.connect() as conn:
             dhs = conn.execute(text("""
                 SELECT DISTINCT r.dh
